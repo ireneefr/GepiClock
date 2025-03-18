@@ -1,4 +1,4 @@
-# Cancer cell lines (GSE68379) pre-processing analysis
+######### Cancer cell lines (GSE68379) pre-processing analysis
 # Digilio Alessandro 
 
 library(limma)
@@ -10,13 +10,13 @@ library(readxl)
 library(tidyverse)
 
 ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-RGset <- read.metharray.exp("/group/iorio/Alessandro.D/EpiClock/pheb-master/data/GSE68379_RAW/",
+RGset <- read.metharray.exp("data/raw_idat_files/GSE68379_RAW/",
                             verbose=T) # read the test idat files from the test folder
 # filter cross-reactive probes
-xReactiveProbes <- read_excel("/group/iorio/Alessandro.D/EpiClock/pheb-master/metadata/48639-non-specific-probes-Illumina450k.xlsx") 
+xReactiveProbes <- read_excel("metadata/48639-non-specific-probes-Illumina450k.xlsx") 
 
 sentrix <- unlist(lapply(RGset@colData@rownames, function(x) paste(strsplit(x, "_")[[1]][-1],collapse="_")))
-sample_sheet <- read_excel("/group/iorio/Alessandro.D/EpiClock/pheb-master/data/methSampleId_2_cosmicIds.xlsx")
+sample_sheet <- read_excel("data/methSampleId_2_cosmicIds.xlsx")
 sample_sheet$meth <- unlist(lapply(1:nrow(sample_sheet), function(x) paste(sample_sheet$Sentrix_ID[x],sample_sheet$Sentrix_Position[x], sep="_")))
 
 cosmics <- unlist(lapply(sentrix, function(x) sample_sheet$cosmic_id[x == sample_sheet$meth]))
@@ -66,7 +66,7 @@ colnames(myNorm)<-sapply(strsplit(colnames(myNorm), split = "_"), function(x) x[
 rm(project_name)
 rm(dir_data)
 message("Saving betas preprocessed")
-write.csv(myNorm, file= "/group/iorio/Alessandro.D/EpiClock/data/CLs_methylation_data.csv")
+write.csv(myNorm, file= "data/b_values/CLs_methylation_data.csv")
 write(c(paste("Initial number of samples:", n_samples),
         paste("Samples with >10% failed probes:", n_samples-n_samples_keep),
         paste("Final number of samples:", n_samples_keep),
@@ -76,6 +76,6 @@ write(c(paste("Initial number of samples:", n_samples),
         paste("Probes filtered:", n_probes_keep2-n_probes_flt),
         paste("Final number of probes:", n_probes_flt),
         paste("Number of NAs imputed:", n_nas)),
-      file = paste("/group/iorio/Alessandro.D/EpiClock/data/info_preprocessing.txt", sep=""))
+      file = paste("data/info_preprocessing.txt", sep=""))
 
 
