@@ -13,7 +13,7 @@ ann450k <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 RGset <- read.metharray.exp("data/raw_idat_files/GSE68379_RAW/",
                             verbose=T) # read the test idat files from the test folder
 # filter cross-reactive probes
-xReactiveProbes <- read_excel("metadata/48639-non-specific-probes-Illumina450k.xlsx") 
+xReactiveProbes <- read_excel("metadata/mask_cpgs/48639-non-specific-probes-Illumina450k.xlsx") 
 
 sentrix <- unlist(lapply(RGset@colData@rownames, function(x) paste(strsplit(x, "_")[[1]][-1],collapse="_")))
 sample_sheet <- read_excel("data/methSampleId_2_cosmicIds.xlsx")

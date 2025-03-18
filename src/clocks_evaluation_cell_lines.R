@@ -15,7 +15,7 @@ src("src/plot_generation_helpers.R")
 # load b-values and annotations from CMP of samples for which a"age at sampling" information is available
 all_b_values_age_at_sampling <- fread("data/b_values_with_age_at_sampling/epiclock_CLs_methylationdata_.csv")
 all_b_values_age_at_sampling <- all_b_values_age_at_sampling %>% column_to_rownames(var = "V1")
-cl_samples_age_at_sampling <- read_csv("metadata/CMP_annotations_with_age_at_sampling/716_CLs_annotations.csv")
+cl_samples_age_at_sampling <- read_csv("metadata/CMP_annotations/CMP_annotations_with_age_at_sampling/716_CLs_annotations.csv")
 cl_samples_age_at_sampling <- cl_samples_age_at_sampling %>% column_to_rownames(var = "...1")
 # check dimension 
 dim(all_b_values_age_at_sampling) # 716 cell lines

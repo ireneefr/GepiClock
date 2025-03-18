@@ -203,7 +203,7 @@ load_450k_methylation_data <- function(all_b_values_path, iorio_path, annotation
 
 ############ AgePred() ###################
 # the 'AgePred' function predicts biological age of cell lines using CpG methylation values based on a model’s coefficients
-AgePred_cell_lines <- function(dir_predictions = "/group/iorio/Alessandro.D/EpiClock/results/predictions/",
+AgePred_cell_lines <- function(dir_predictions = "/group/iorio/Alessandro.D/EpiClock/results/cell_lines/predictions/",
                     name, # file name
                     coefs, # coefficient of the model's CpGs
                     bval){ # b_values
@@ -370,7 +370,7 @@ run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res) {
     mutate(across(where(is.list), ~ sapply(., toString)))
 
   # save results 
-  output_path <- "results/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"
+  output_path <- "results/cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"
   write_xlsx(significant_results_DSEA_df, output_path)
   
   return(significant_results_DSEA_df)
@@ -465,7 +465,7 @@ anova_drugresponse_cancer_specific <- function(GDSC_age_filtered) {
 # the 'summarize_significant_drugs' function prints a summary of significant drugs per cancer type
 # and saves them to an Excel file.
 summarize_significant_drugs <- function(anova_results,
-                                        output_file = "results/cell_lines_drug_sensitivity/significant_drugs_cancer_types/significant_drugs_anova_results.xlsx") {
+                                        output_file = "results/cell_lines/cell_lines_drug_sensitivity/significant_drugs_cancer_types/significant_drugs_anova_results.xlsx") {
   
   significant_summary <- "From the ANOVA analysis (cancer-type specific), the following significant drugs were identified:\n"
   
@@ -632,7 +632,7 @@ run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_fi
   significant_results_df <- significant_results %>%
     mutate(across(where(is.list), ~ sapply(., toString)))
   
-  output_path <- "results/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"
+  output_path <- "results/cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"
   write_xlsx(significant_results_df, output_path)
   
   return(significant_results_df)
@@ -1068,10 +1068,10 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
   significant_gseacc_df <- significant_gseacc[, !colnames(significant_gseacc) %in% "core_enrichment"]
   significant_gseakegg_df <- significant_gseakegg[, !colnames(significant_gseakegg) %in% "core_enrichment"]
   
-  write_xlsx(significant_gseabp_df, "results/cell_lines_gene_dependencies/gsea_pancancer/GOBP_enrichments.xlsx")
-  write_xlsx(significant_gseamf_df, "results/cell_lines_gene_dependencies/gsea_pancancer/GOMF_enrichments.xlsx")
-  write_xlsx(significant_gseacc_df, "results/cell_lines_gene_dependencies/gsea_pancancer/GOCC_enrichments.xlsx")
-  write_xlsx(significant_gseakegg_df, "results/cell_lines_gene_dependencies/gsea_pancancer/GOKEGG_enrichments.xlsx")
+  write_xlsx(significant_gseabp_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOBP_enrichments.xlsx")
+  write_xlsx(significant_gseamf_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOMF_enrichments.xlsx")
+  write_xlsx(significant_gseacc_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOCC_enrichments.xlsx")
+  write_xlsx(significant_gseakegg_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOKEGG_enrichments.xlsx")
   
   return(list(
     GO_BP = significant_gseabp_df,
@@ -1314,7 +1314,7 @@ anova_genedep_cancer_specific <- function(scaled_DepMat_list, cl_samples_filtere
 # the 'summarize_significant_genes' function prints a summary of significant genes per cancer type
 # and saves them to an Excel file.
 summarize_significant_genes <- function(anova_results, 
-                                        output_file = "results/cell_lines_gene_dependencies/significant_genes_cancer_types/significant_genes_anova_results.xlsx") {
+                                        output_file = "results/cell_lines/cell_lines_gene_dependencies/significant_genes_cancer_types/significant_genes_anova_results.xlsx") {
   
   significant_summary <- "From the ANOVA analysis (cancer-type specific), the following significant genes were identified:\n"
   
@@ -1366,7 +1366,7 @@ summarize_significant_genes <- function(anova_results,
     write_xlsx(significant_genes_df, output_file)
     cat("\n Significant gene results saved to:", output_file, "\n")
   } else {
-    cat("\n⚠ No significant genes found. No file was saved.\n")
+    cat("\n No significant genes found. No file was saved.\n")
   }
 }
 
@@ -1412,7 +1412,7 @@ extract_significant_genes <- function(anova_results) {
 # This method ranks grnrd based on the correlation between predicted age and gene dependency (gene effect) 
 # and tests whether specific pathways are significantly enriched among the top-ranked genes.
 run_gsea_cancer_specific <- function(cumulative_correlation_results, 
-                                     output_dir = "results/cell_line_gene_dependencies/gsea_per_cancer_type") {
+                                     output_dir = "results/cell_lines/cell_line_gene_dependencies/gsea_per_cancer_type") {
   
   set.seed(123)
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE) # create output directory if it does not exist

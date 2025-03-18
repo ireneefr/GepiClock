@@ -16,7 +16,7 @@ library(readxl)
 # ==================================================
 
 # load coefficients/CpGs of the new model
-model <- load_model_coefficients("/group/iorio/Irene/git_epiclock/res/model/model_coefs.csv")
+model <- load_model_coefficients("results/model/model_coefs.csv")
 model_CpGs <- model$model_CpGs
 coefficients_new_model <- model$coefficients_new_model
 dim(coefficients_new_model)  

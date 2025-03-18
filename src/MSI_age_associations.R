@@ -13,7 +13,7 @@ library(dplyr)
 library(data.table)
 
 # set working directory
-setwd("/group/iorio/Alessandro.D/EpiClock")
+setwd("/group/iorio/Alessandro.D/epiclock")
 
 # load scripts
 source("src/global_params.R")

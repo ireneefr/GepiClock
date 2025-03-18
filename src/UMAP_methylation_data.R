@@ -14,7 +14,7 @@ library(data.table)
 library(readxl)
 
 # set working directory
-setwd("/group/iorio/Alessandro.D/EpiClock")
+setwd("/group/iorio/Alessandro.D/epiclock")
 
 # load scripts
 source("src/global_params.R")
@@ -65,7 +65,7 @@ output_cancer_model <- paste0(figures_path, "umap/umap_b_values_cancer_type.png"
 output_msi_model <- paste0(figures_path, "umap/umap_b_values_msi.png")
 
 # load coefficients/CpGs of the new model
-model <- load_model_coefficients("/group/iorio/Irene/git_epiclock/res/model/model_coefs.csv")
+model <- load_model_coefficients("results/model/model_coefs.csv")
 model_CpGs <- model$model_CpGs
 coefficients_new_model <- model$coefficients_new_model
 dim(coefficients_new_model)  
