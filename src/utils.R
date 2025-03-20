@@ -2069,8 +2069,8 @@ preprocessing <- function(name = "", array = "", external = TRUE,
 
 
 # CpGs shared between Illumina methylation arrays (450k, EPIC, EPICv2)
-CpGshared <- function(dir_annotations = "/group/iorio/Irene/git_epiclock/metadata/Illumina_arrays/",
-                      dir_file = "/group/iorio/Irene/git_epiclock/res/resources/cpgs_shared.txt"){
+CpGshared <- function(dir_annotations = "metadata/Illumina_arrays/",
+                      dir_file = "results/TCGA/resources/cpgs_shared.txt"){
   # Check if the file already exists
   if (file.exists(dir_file)) {
     return(readLines(dir_file))
@@ -2099,7 +2099,7 @@ TCGA_projects <- function(){
 
 
 # TCGA samples information
-TCGA_samples <- function(dir_data = "/group/iorio/Irene/epiclock/data/",
+TCGA_samples <- function(dir_data = "/group/iorio/Irene/legacy/epiclock_old/data/",
                          project = TCGA_projects()){  
   all_samples <- NULL
   for(i in project){
@@ -2117,7 +2117,7 @@ TCGA_samples <- function(dir_data = "/group/iorio/Irene/epiclock/data/",
 }
 
 # TCGA beta values
-TCGA_Bvalues <- function(dir_data = "/group/iorio/Irene/epiclock/data/",
+TCGA_Bvalues <- function(dir_data = "/group/iorio/Irene/legacy/epiclock_old/data/",
                          project = TCGA_projects()){
   all_data <- NULL
   for(i in project){
