@@ -16,7 +16,7 @@ library(readxl)
 # ==================================================
 
 # load coefficients/CpGs of the new model
-model <- load_model_coefficients("results/model/model_coefs.csv")
+model <- load_model_coefficients(paste0(CpGs_path, "model_coefs.csv"))
 model_CpGs <- model$model_CpGs
 coefficients_new_model <- model$coefficients_new_model
 dim(coefficients_new_model)  
@@ -28,11 +28,11 @@ length(model_CpGs)
 
 # load the model methylation data (b-values) and the annotations from CMP of the cell lines
 cell_lines_data <- load_b_values_and_annotations(
-  b_values_path = "data/b_values/CLs_methylation_data.csv", # load methylation data
+  b_values_path = paste0(data_path, "b_values/CLs_methylation_data.csv"), # load methylation data
   model_CpGs = model_CpGs,# load model's CpGs
-  iorio_path = "metadata/CMP_annotations/IorioCell2016-MethylAccesionCellLines.txt", # load iorio cls ACcession code 
-  annotations_path = "metadata/CMP_annotations/model_list_20240110.csv", # load cls metadata (annotations)
-  experimental_settings_path = "metadata/CMP_GROWTH_20250114.txt" # load doubling time annotations (experimental settings)
+  iorio_path = paste0(metadata_path, "CMP_annotations/IorioCell2016-MethylAccesionCellLines.txt"), # load iorio cls ACcession code 
+  annotations_path = paste0(metadata_path, "CMP_annotations/model_list_20240110.csv"), # load cls metadata (annotations)
+  experimental_settings_path = paste0(metadata_path, "CMP_GROWTH_20250114.txt") # load doubling time annotations (experimental settings)
    )
 # extract matched data
 b_values <- cell_lines_data$b_values
@@ -65,8 +65,8 @@ print((paste("The total number of samples is", nrow(cl_samples), ",while the num
 # ==================================================
 
 # drug response data from the GDSC databank
-GDSC1_IC50s <- read_excel("data/GDSC/GDSC1_fitted_dose_response_27Oct23.xlsx")
-GDSC2_IC50s <- read_excel("data/GDSC/GDSC2_fitted_dose_response_27Oct23.xlsx")
+GDSC1_IC50s <- read_excel(paste0(data_path, "GDSC/GDSC1_fitted_dose_response_27Oct23.xlsx"))
+GDSC2_IC50s <- read_excel(paste0(data_path, "GDSC/GDSC2_fitted_dose_response_27Oct23.xlsx"))
 # combine and clean GDSC Data
 GDSC_combined <- bind_rows(GDSC1_IC50s, GDSC2_IC50s) %>%
   distinct(COSMIC_ID, DRUG_NAME, CELL_LINE_NAME, .keep_all = TRUE) # distinct: duplicate rows are removed
@@ -78,10 +78,10 @@ print("The GDSC1 and GDSC2 datasets have been loaded and merged")
 
 # gene effect data from DepMap (pan-cancer)
 gene_effect_and_cl_filtered <- load_and_filter_genedep_pancancer(
-  depmap_file = "data/depmap/CRISPRGeneEffect.csv", # Gene effect matrix from DepMap Public 24Q2 Files
-  essential_genes_file = "data/depmap/AchillesCommonEssentialControls.csv", # Achilles Common Essential genes
-  nonessential_genes_file = "data/depmap/AchillesNonessentialControls.csv", # Achilles Never Essential genes
-  bagel_data_path = "data/BAGEL/", # additional essential & non-essential gene sets (BAGEL dataset)
+  depmap_file = paste0(data_path, "depmap/CRISPRGeneEffect.csv"), # Gene effect matrix from DepMap Public 24Q2 Files
+  essential_genes_file = paste0(data_path, "depmap/AchillesCommonEssentialControls.csv"), # Achilles Common Essential genes
+  nonessential_genes_file = paste0(data_path, "depmap/AchillesNonessentialControls.csv"), # Achilles Never Essential genes
+  bagel_data_path = paste0(data_path, "BAGEL/"), # additional essential & non-essential gene sets (BAGEL dataset)
   cl_samples = cl_samples, # cell line metadata for filtering
   min_cell_lines = 2 # retain genes depleted (-0.5) in at least 2 cell lines
 )
@@ -97,10 +97,10 @@ print(dim(cl_samples_gene_filtered))
 
 # gene effect data from DepMap (cancer-type specific)
 gene_effect_and_cl_filtered_cancer_specific <- load_and_filter_genedep_cancer_type(
-  depmap_file = "data/depmap/CRISPRGeneEffect.csv", # Gene effect matrix from DepMap Public 24Q2 Files
-  essential_genes_file = "data/depmap/AchillesCommonEssentialControls.csv", # Achilles Common Essential genes
-  nonessential_genes_file = "data/depmap/AchillesNonessentialControls.csv", # Achilles Never Essential genes
-  bagel_data_path = "data/BAGEL/", # additional essential & non-essential gene sets (BAGEL dataset)
+  depmap_file = paste0(data_path, "depmap/CRISPRGeneEffect.csv"), # Gene effect matrix from DepMap Public 24Q2 Files
+  essential_genes_file = paste0(data_path, "depmap/AchillesCommonEssentialControls.csv"), # Achilles Common Essential genes
+  nonessential_genes_file = paste0(data_path, "depmap/AchillesNonessentialControls.csv"), # Achilles Never Essential genes
+  bagel_data_path = paste0(data_path, "BAGEL/"), # additional essential & non-essential gene sets (BAGEL dataset)
   cl_samples = cl_samples,  # cell line metadata for filtering
   min_cell_lines = 2  # retain genes depleted (-0.5) in at least 2 cell lines
 )

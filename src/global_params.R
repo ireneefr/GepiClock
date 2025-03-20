@@ -6,6 +6,14 @@
 
 # in this script are collected all the global parameters
 
+# directories
+epiclock <- "/group/iorio/Alessandro.D/epiclock" # working directory
+data_path <- "data/"
+metadata_path <- "metadata/"
+CpGs_path <- "results/model/"
+results_path <- "results/"
+figures_path <- "results/plots/"
+
 # cell lines' cancer types colors
 cancer_colors <- c(
   "Acute Monocytic Leukemia" = "#ff0000",

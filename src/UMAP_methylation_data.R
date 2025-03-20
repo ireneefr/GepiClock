@@ -27,10 +27,10 @@ source("src/plot_generation_helpers.R")
 
 # load 450k methylation data (entire methylation profile of the cell lines)
 all_methylation_data <- load_450k_methylation_data(
-  all_b_values_path = "data/b_values/CLs_methylation_data.csv",  # complete methylation data
-  iorio_path = "metadata/CMP_annotations/IorioCell2016-MethylAccesionCellLines.txt", # Iorio dataset
-  annotations_path = "metadata/CMP_annotations/model_list_20240110.csv", # cell line metadata
-  experimental_settings_path = "metadata/CMP_GROWTH_20250114.txt" # doubling time annotations
+  all_b_values_path = paste0(data_path, "b_values/CLs_methylation_data.csv"),  # complete methylation data
+  iorio_path = paste0(metadata_path, "CMP_annotations/IorioCell2016-MethylAccesionCellLines.txt"), # Iorio dataset
+  annotations_path = paste0(metadata_path, "CMP_annotations/model_list_20240110.csv"), # cell line metadata
+  experimental_settings_path = paste0(metadata_path, "CMP_GROWTH_20250114.txt") # doubling time annotations
 )
 
 # extract processed datasets
@@ -73,11 +73,11 @@ length(model_CpGs)
 
 # load model-specific methylation data (b-values) & annotations
 model_methylation_data <- load_b_values_and_annotations(
-  b_values_path = "data/b_values/CLs_methylation_data.csv",  # methylation data
+  b_values_path = paste0(data_path, "b_values/CLs_methylation_data.csv"),  # methylation data
   model_CpGs = model_CpGs,  # selected CpGs from the model
-  iorio_path = "metadata/CMP_annotations/IorioCell2016-MethylAccesionCellLines.txt", # Iorio dataset
-  annotations_path = "metadata/CMP_annotations/model_list_20240110.csv", # cell line metadata
-  experimental_settings_path = "metadata/CMP_GROWTH_20250114.txt" # doubling time annotations
+  iorio_path = paste0(metadata_path, "CMP_annotations/IorioCell2016-MethylAccesionCellLines.txt"), # Iorio dataset
+  annotations_path = paste0(metadata_path, "CMP_annotations/model_list_20240110.csv"), # cell line metadata
+  experimental_settings_path = paste0(metadata_path, "CMP_GROWTH_20250114.txt") # doubling time annotations
 )
 
 # extract processed datasets

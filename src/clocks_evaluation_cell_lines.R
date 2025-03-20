@@ -10,12 +10,13 @@ library(dnaMethyAge)
 library(tidyverse)
 library(data.table)
 
-src("src/plot_generation_helpers.R")
+source("src/global_params.R")
+source("src/plot_generation_helpers.R")
 
 # load b-values and annotations from CMP of samples for which a"age at sampling" information is available
-all_b_values_age_at_sampling <- fread("data/b_values_with_age_at_sampling/epiclock_CLs_methylationdata_.csv")
+all_b_values_age_at_sampling <- fread(paste0(data_path, "b_values_with_age_at_sampling/epiclock_CLs_methylationdata_.csv"))
 all_b_values_age_at_sampling <- all_b_values_age_at_sampling %>% column_to_rownames(var = "V1")
-cl_samples_age_at_sampling <- read_csv("metadata/CMP_annotations/CMP_annotations_with_age_at_sampling/716_CLs_annotations.csv")
+cl_samples_age_at_sampling <- read_csv(paste0(metadata_path, "CMP_annotations/CMP_annotations_with_age_at_sampling/716_CLs_annotations.csv"))
 cl_samples_age_at_sampling <- cl_samples_age_at_sampling %>% column_to_rownames(var = "...1")
 # check dimension 
 dim(all_b_values_age_at_sampling) # 716 cell lines

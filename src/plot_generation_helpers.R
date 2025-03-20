@@ -8,13 +8,6 @@
 
 library(ggplot2)
 
-# dir to save plots
-figures_path <- "results/plots/"
-
-
-
-
-
 # this plot compare the performance of the clocks in terms of correlation between the predicted age and the annotated age at sampling in cell lines
 plot_clocks_performances <- function(correlations) {
   custom_colors <- c("#61D04F", "#87CEEB", "#2297E6", "#003366")
@@ -610,8 +603,14 @@ dsea_cancerspecific_dotplot <- function(significant_results, title) {
       legend.text = element_text(size = 16)     
     ) +     
     guides(color = guide_legend(override.aes = list(size = 8)))       
-  
-  ggsave("results/plots/dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png", plot = dsea_dotplot, width = 12, height = 8, dpi = 300)       
+  ggsave(
+    paste0(figures_path, "volcano_cancer_specific.png"),
+    plot = volcano_plot,
+    width = 10,
+    height = 8,
+    dpi = 300
+  )
+  ggsave(paste0(figures_path, "dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png"), plot = dsea_dotplot, width = 12, height = 8, dpi = 300)       
   
   return(dsea_dotplot) 
 }
@@ -850,7 +849,7 @@ plot_sample_categories_cancer_specific_gene <- function(gene_dep_age_filtered) {
     ) +
     coord_flip()
   
-  output_path <- "results/plots/cancer_selection_genedep_canc_spec.png"
+  output_path <- paste0(figures_path, "cancer_selection_genedep_canc_spec.png")
   ggsave(output_path, plot = cancer_plot, width = 10, height = 8, dpi = 300)
   
   return(cancer_plot)
@@ -1073,7 +1072,7 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title) {
     guides(color = guide_legend(override.aes = list(size = 8)))
   
   # save the plot
-  ggsave("results/plots/gsea_dotplot_cancer_specific_MutExMatSorting.png", plot = gsea_dotplot, width = 14, height = 8, dpi = 300)
+  ggsave(paste0(figures_path, "gsea_dotplot_cancer_specific_MutExMatSorting.png"), plot = gsea_dotplot, width = 14, height = 8, dpi = 300)
   
   return(gsea_dotplot)
 }
