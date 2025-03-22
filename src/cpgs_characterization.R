@@ -4,7 +4,8 @@
 ###   Date: 20/11/2024                                 ###
 ##########################################################
 
-source("/Volumes/iorio/Irene/git_epiclock/src/utils.R")
+setwd("/group/iorio/Irene/epiclock_dev")
+source("src/utils.R")
 
 # Load packages
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
@@ -16,7 +17,7 @@ library(ggplot2)
 library(VennDiagram)
 
 # Load data
-model_coefs <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/model_coefs.csv")
+model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
 model_coefs <- subset(model_coefs, s0 != 0) #4863  2
 ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ann_model_cpgs <- merge(ann, model_coefs, by.x = "row.names", by.y = "X")
@@ -28,7 +29,7 @@ gene_region <- as.data.frame(ann_model_cpgs) %>%
   summarize(n = n()) %>%
   mutate(percentage = n / sum(n) * 100)
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_gene.png",
+png(filename = "results/TCGA/plots/cpgs_gene.png",
     width = 5, height = 5, units = 'in', res = 300)
 ggplot(gene_region, aes(x = "", y = n, fill = group)) +
   geom_bar(stat = "identity", width = 1) +
@@ -66,12 +67,12 @@ dev.off()
 
 # Enrichment analysis - No ranking
 genes <- unique(unlist(strsplit(ann_model_cpgs[ann_model_cpgs$UCSC_RefGene_Name != "", "UCSC_RefGene_Name"], ";")))
-writeLines(genes, "/Volumes/iorio/Irene/git_epiclock/res/resources/3337genes.txt")
+writeLines(genes, "results/TCGA/resources/3337genes.txt")
 enrichbp <- enrichGO(gene = genes,
                      OrgDb = org.Hs.eg.db,
                      keyType = "SYMBOL",
                      ont = "BP")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_bp.png",
+png(filename = "results/TCGA/plots/enrichGO_bp.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichbp, title = "GO Biological Process")
 dev.off()
@@ -79,7 +80,7 @@ enrichmf <- enrichGO(gene = genes,
                      OrgDb = org.Hs.eg.db,
                      keyType = "SYMBOL",
                      ont = "MF")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_mf.png",
+png(filename = "results/TCGA/plots/enrichGO_mf.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichmf, title = "GO Molecular Function")
 dev.off()
@@ -87,14 +88,14 @@ enrichcc <- enrichGO(gene = genes,
                      OrgDb = org.Hs.eg.db,
                      keyType = "SYMBOL",
                      ont = "CC")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_cc.png",
+png(filename = "results/TCGA/plots/enrichGO_cc.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichcc, title = "GO Cellular Component")
 dev.
 entrez_ids <- bitr(genes, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
 enrichkegg <- enrichKEGG(gene = entrez_ids$ENTREZID,
                          organism = "hsa")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_kegg.png",
+png(filename = "results/TCGA/plots/enrichGO_kegg.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichkegg, title = "KEGG")
 dev.off()
@@ -113,7 +114,7 @@ venn.diagram(x = list(cpgs_neg, cpgs_pos),
              imagetype = "png",
              height = 1500, 
              width = 1500,
-             filename = '/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_coefs_sign.png',
+             filename = 'results/TCGA/plots/cpgs_coefs_sign.png',
              output=TRUE)
 ann_model_cpgs_neg <- ann_model_cpgs[ann_model_cpgs$Row.names %in% cpgs_neg,]
 ann_model_cpgs_pos <- ann_model_cpgs[ann_model_cpgs$Row.names %in% cpgs_pos,]
@@ -131,71 +132,71 @@ venn.diagram(x = list(genes_neg, genes_pos),
              imagetype = "png",
              height = 1500, 
              width = 1500,
-             filename = '/Volumes/iorio/Irene/git_epiclock/res/plots/genes_coefs_sign.png',
+             filename = 'results/TCGA/plots/genes_coefs_sign.png',
              output=TRUE)
 
 enrichbp_mix <- enrichGO(gene = genes_mix, OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "BP")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_bp_mix.png",
+png(filename = "results/TCGA/plots/enrichGO_bp_mix.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichbp_mix, title = "GO Biological Process")
 dev.off()
 enrichmf_mix <- enrichGO(gene = genes_mix, OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "MF")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_mf_mix.png",
+png(filename = "results/TCGA/plots/enrichGO_mf_mix.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichmf_mix, title = "GO Molecular Function")
 dev.off()
 enrichcc_mix <- enrichGO(gene = genes_mix, OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "CC")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_cc_mix.png",
+png(filename = "results/TCGA/plots/enrichGO_cc_mix.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichcc_mix, title = "GO Cellular Component")
 dev.off()
 entrez_ids_mix <- bitr(genes_mix, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
 enrichkegg_mix <- enrichKEGG(gene = entrez_ids_mix$ENTREZID, organism = "hsa")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_kegg_mix.png",
+png(filename = "results/TCGA/plots/enrichGO_kegg_mix.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichkegg_mix, title = "KEGG")
 dev.off()
 
 enrichbp_neg <- enrichGO(gene = genes_neg[!(genes_neg %in% genes_mix)], OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "BP")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_bp_neg.png",
+png(filename = "results/TCGA/plots/enrichGO_bp_neg.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichbp_neg, title = "GO Biological Process")
 dev.off()
 enrichmf_neg <- enrichGO(gene = genes_neg[!(genes_neg %in% genes_mix)], OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "MF")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_mf_neg.png",
+png(filename = "results/TCGA/plots/enrichGO_mf_neg.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichmf_neg, title = "GO Molecular Function")
 dev.off()
 enrichcc_neg <- enrichGO(gene = genes_neg[!(genes_neg %in% genes_mix)], OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "CC")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_cc_neg.png",
+png(filename = "results/TCGA/plots/enrichGO_cc_neg.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichcc_neg, title = "GO Cellular Component")
 dev.off()
 entrez_ids_neg <- bitr(genes_neg[!(genes_neg %in% genes_mix)], fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
 enrichkegg_neg <- enrichKEGG(gene = entrez_ids_neg$ENTREZID, organism = "hsa")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_kegg_neg.png",
+png(filename = "results/TCGA/plots/enrichGO_kegg_neg.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichkegg_neg, title = "KEGG")
 dev.off()
 
 enrichbp_pos <- enrichGO(gene = genes_pos[!(genes_pos %in% genes_mix)], OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "BP")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_bp_pos.png",
+png(filename = "results/TCGA/plots/enrichGO_bp_pos.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichbp_pos, title = "GO Biological Process")
 dev.off()
 enrichmf_pos <- enrichGO(gene = genes_pos[!(genes_pos %in% genes_mix)], OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "MF")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_mf_pos.png",
+png(filename = "results/TCGA/plots/enrichGO_mf_pos.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichmf_pos, title = "GO Molecular Function")
 dev.off()
 enrichcc_pos <- enrichGO(gene = genes_pos[!(genes_pos %in% genes_mix)], OrgDb = org.Hs.eg.db, keyType = "SYMBOL", ont = "CC")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_cc_pos.png",
+png(filename = "results/TCGA/plots/enrichGO_cc_pos.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichcc_pos, title = "GO Cellular Component")
 dev.off()
 entrez_ids_pos <- bitr(genes_pos[!(genes_pos %in% genes_mix)], fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
 enrichkegg_pos <- enrichKEGG(gene = entrez_ids_pos$ENTREZID, organism = "hsa")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/enrichGO_kegg_pos.png",
+png(filename = "results/TCGA/plots/enrichGO_kegg_pos.png",
     width = 7, height = 7, units = 'in', res = 300)
 dotplot(enrichkegg_pos, title = "KEGG")
 dev.off()

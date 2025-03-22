@@ -4,8 +4,9 @@
 ###   Date: 04/03/2025                                      ###
 ###############################################################
 
-source("/group/iorio/Irene/git_epiclock/src/utils.R")
-dir_results <- "/group/iorio/Irene/git_epiclock/res/"
+setwd("/group/iorio/Irene/epiclock_dev")
+source("src/utils.R")
+dir_results <- "results/TCGA/"
 library(caret)
 
 # Load data
@@ -125,7 +126,7 @@ res <- rbind(res_test_summary, res_normal_summary, res_tumor_summary)
 color_type <- c("Primary Tumour (Test)" = "steelblue1",
                 "Primary Tumour (Others)" = "steelblue3",
                 "Normal Tissue" = "chartreuse3")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/missing_coefficients.png",
+png(filename = "results/TCGA/plots/missing_coefficients.png",
     width = 12, height = 7, units = 'in', res = 300)
 ggplot(res, aes(x = Perc_missing, y = mean,
                 ymin = mean-sd, ymax = mean+sd, fill = data, color = data)) +

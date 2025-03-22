@@ -4,7 +4,8 @@
 ###   Date: 20/11/2024                          ###
 ###################################################
 
-source("/Volumes/iorio/Irene/iorio_epiclock/R/utils.R")
+setwd("/group/iorio/Irene/epiclock_dev")
+source("src/utils.R")
 
 # Load packages
 library(minfi)
@@ -16,7 +17,7 @@ library(tidyr)
 library(dplyr)
 
 # Load data
-model_coefs <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/model_coefs.csv")
+model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
 model_coefs <- subset(model_coefs, s0 != 0) #4863  2
 ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 ann_model_cpgs <- merge(ann, model_coefs, by.x = "row.names", by.y = "X")
@@ -89,7 +90,7 @@ genomic_windows$ypos <- 1
 #         strip.text = element_text(size = 10, face = "bold"))
 # dev.off()
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_karyogram_hypergeometric.png",
+png(filename = "results/TCGA/plots/cpgs_karyogram_hypergeometric.png",
     width = 10, height = 6, units = 'in', res = 300)
 ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
   scale_fill_gradient(low = "white", high = "red", na.value = "white") +
@@ -102,7 +103,7 @@ ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
         panel.spacing.y = unit(0, "lines"))
 dev.off()
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_karyogram_hypergeometric_coefs.png",
+png(filename = "results/TCGA/plots/cpgs_karyogram_hypergeometric_coefs.png",
     width = 10, height = 6, units = 'in', res = 300)
 ggbio::autoplot(genomic_windows, aes(fill = mean_coef), layout = "karyogram") +
   scale_fill_gradient2(low = "orange", mid = "white", high = "purple", na.value = "white") +

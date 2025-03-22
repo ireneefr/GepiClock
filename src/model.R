@@ -4,13 +4,14 @@
 ###   Date: 25/02/2025                                              ###
 #######################################################################
 
-source("/group/iorio/Irene/git_epiclock/src/utils.R")
+setwd("/group/iorio/Irene/epiclock_dev")
+dir_results <- "results/TCGA/"
+source("src/utils.R")
 library(doParallel)
 library(parallel)
 library(caret)
 library(glmnet)
 library(glmnetUtils)
-dir_results <- "/group/iorio/Irene/git_epiclock/res/"
 library(tictoc)
 
 # Parallelization
@@ -58,10 +59,13 @@ y.train <- samples_model[samples_model$barcode %in% train, "age_at_index"]
 y.test <- samples_model[samples_model$barcode %in% test, "age_at_index"]
 rm(tcga_bval, bval_model); gc() #free up memory
 
-write.csv(x.train, paste0(dir_results, "model/x.train.csv"))
-write.csv(x.test, paste0(dir_results, "model/x.test.csv"))
-write.csv(y.train, paste0(dir_results, "model/y.train.csv"))
-write.csv(y.test, paste0(dir_results, "model/y.test.csv"))
+# Save barcodes in each set
+writeLines(train, paste0(dir_results, "model/train.txt"))
+writeLines(test, paste0(dir_results, "model/test.txt"))
+# write.csv(x.train, paste0(dir_results, "model/x.train.csv"))
+# write.csv(x.test, paste0(dir_results, "model/x.test.csv"))
+# write.csv(y.train, paste0(dir_results, "model/y.train.csv"))
+# write.csv(y.test, paste0(dir_results, "model/y.test.csv"))
 
 toc()
 
@@ -106,6 +110,7 @@ best_id <- which(min(df_cvm) == df_cvm)
 fit_best <- glmnet(x = x.train, y = y.train,
                    alpha = df_alpha[best_id],
                    lambda = df_lambda.1se[best_id])
+saveRDS(fit_best, paste0(dir_results, "model/model.rds"))
 model_coefs <- coef(fit_best)
 write.csv(as.matrix(model_coefs), paste0(dir_results, "model/model_coefs.csv"))
 toc()

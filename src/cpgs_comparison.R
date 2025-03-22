@@ -4,11 +4,12 @@
 ###   Date: 06/06/2024                            ###
 #####################################################
 
+setwd("/group/iorio/Irene/epiclock_dev")
 library(VennDiagram)
 library(RColorBrewer)
 library(scales)
 library(UpSetR)
-dir_metadata <- "/Volumes/iorio/Irene/git_epiclock/metadata/"
+dir_metadata <- "metadata/"
 
 # Load data
 load(paste0(dir_metadata, "HorvathS2013.rda"))
@@ -19,7 +20,7 @@ load(paste0(dir_metadata, "HorvathS2018.rda"))
 horvath2 <- coefs$Probe[-1]
 load(paste0(dir_metadata, "LevineM2018.rda"))
 levine <- coefs$Probe[-1]
-rebollo <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/model_coefs.csv", row.names = 1)
+rebollo <- read.csv("results/TCGA/model/model_coefs.csv", row.names = 1)
 rebollo <- rownames(rebollo)[rebollo[,1] != 0][-1]
 
 # Get genes
@@ -48,7 +49,7 @@ venn.diagram(
                      "HorvathS2018",
                      "LevineM2018",
                      "RebolloI2025"),
-  filename = '/Volumes/iorio/Irene/git_epiclock/res/plots/venn_cpgs_comparison.png',
+  filename = 'results/TCGA/plots/venn_cpgs_comparison.png',
   fill = alpha(myCol, 0.7),
   col = myCol,
   cex = 1.5,
@@ -74,7 +75,7 @@ venn.diagram(
                      "HorvathS2018",
                      "LevineM2018",
                      "RebolloI2025"),
-  filename = '/Volumes/iorio/Irene/git_epiclock/res/plots/venn_genes_comparison.png',
+  filename = 'results/TCGA/plots/venn_genes_comparison.png',
   fill = alpha(myCol, 0.7),
   col = myCol,
   cex = 1.5,
@@ -98,7 +99,7 @@ cpg_lists <- list(HorvathS2013 = horvath,
                   RebolloI2025 = rebollo)
 cpg_data_upset <- fromList(cpg_lists)
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/upset_cpgs_comparison.png",
+png(filename = "results/TCGA/plots/upset_cpgs_comparison.png",
     width = 10, height = 6, units = 'in', res = 300)
 upset(cpg_data_upset, order.by = "freq", nsets = 5,
       nintersects = 23,
@@ -118,7 +119,7 @@ gene_lists <- list(HorvathS2013 = gene_horvath,
                    RebolloI2025 = gene_rebollo)
 gene_data_upset <- fromList(gene_lists)
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/upset_genes_comparison.png",
+png(filename = "results/TCGA/plots/upset_genes_comparison.png",
     width = 10, height = 6, units = 'in', res = 300)
 upset(gene_data_upset, order.by = "freq", nsets = 5,
       nintersects = 23,

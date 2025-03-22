@@ -4,13 +4,14 @@
 ###   Date: 25/02/2025                                                 ###
 ##########################################################################
 
-source("/group/iorio/Irene/git_epiclock/src/utils.R")
+setwd("/group/iorio/Irene/epiclock_dev")
+dir_results <- "results/TCGA/"
+source("src/utils.R")
 library(doParallel)
 library(parallel)
 library(caret)
 library(glmnet)
 library(glmnetUtils)
-dir_results <- "/group/iorio/Irene/git_epiclock/res/"
 library(tictoc)
 
 # Parallelization
@@ -72,15 +73,20 @@ y.train_n <- samples_model_n[samples_model_n$barcode %in% train_n, "age_at_index
 y.test_n <- samples_model_n[samples_model_n$barcode %in% test_n, "age_at_index"]
 rm(tcga_bval, bval_model_t, bval_model_n); gc() #free up memory
 
-write.csv(x.train_t, paste0(dir_results, "model/x.train_t.csv"))
-write.csv(x.test_t, paste0(dir_results, "model/x.test_t.csv"))
-write.csv(y.train_t, paste0(dir_results, "model/y.train_t.csv"))
-write.csv(y.test_t, paste0(dir_results, "model/y.test_t.csv"))
-
-write.csv(x.train_n, paste0(dir_results, "model/x.train_n.csv"))
-write.csv(x.test_n, paste0(dir_results, "model/x.test_n.csv"))
-write.csv(y.train_n, paste0(dir_results, "model/y.train_n.csv"))
-write.csv(y.test_n, paste0(dir_results, "model/y.test_n.csv"))
+# Save barcodes in each set
+writeLines(train_t, paste0(dir_results, "model/train_t.txt"))
+writeLines(test_t, paste0(dir_results, "model/test_t.txt"))
+writeLines(train_n, paste0(dir_results, "model/train_n.txt"))
+writeLines(test_n, paste0(dir_results, "model/test_n.txt"))
+# write.csv(x.train_t, paste0(dir_results, "model/x.train_t.csv"))
+# write.csv(x.test_t, paste0(dir_results, "model/x.test_t.csv"))
+# write.csv(y.train_t, paste0(dir_results, "model/y.train_t.csv"))
+# write.csv(y.test_t, paste0(dir_results, "model/y.test_t.csv"))
+# 
+# write.csv(x.train_n, paste0(dir_results, "model/x.train_n.csv"))
+# write.csv(x.test_n, paste0(dir_results, "model/x.test_n.csv"))
+# write.csv(y.train_n, paste0(dir_results, "model/y.train_n.csv"))
+# write.csv(y.test_n, paste0(dir_results, "model/y.test_n.csv"))
 toc()
 
 tic("Create folds")
@@ -132,10 +138,10 @@ for(i in 1:length(fit_n$alpha)){
   df_nzero_n <- c(df_nzero_n, fit_n$modlist[[i]]$nzero[id_n])
 }
 df_fit_n <- data.frame(alpha = df_alpha_n,
-                     lambda.1se = df_lambda.1se_n,
-                     Measure = df_cvm_n,
-                     SE = df_cvsd_n,
-                     Nonzero = df_nzero_n
+                       lambda.1se = df_lambda.1se_n,
+                       Measure = df_cvm_n,
+                       SE = df_cvsd_n,
+                       Nonzero = df_nzero_n
 )
 write.csv(df_fit_n, paste0(dir_results, "model/stats_elasticnet_n.csv"))
 toc()
@@ -145,11 +151,13 @@ tic("Elastic net with best alpha-lambda")
 best_id_t <- which(min(df_cvm_t) == df_cvm_t)
 best_id_n <- which(min(df_cvm_n) == df_cvm_n)
 fit_best_t <- glmnet(x = x.train_t, y = y.train_t,
-                   alpha = df_alpha_t[best_id_t],
-                   lambda = df_lambda.1se_t[best_id_t])
+                     alpha = df_alpha_t[best_id_t],
+                     lambda = df_lambda.1se_t[best_id_t])
 fit_best_n <- glmnet(x = x.train_n, y = y.train_n,
                      alpha = df_alpha_n[best_id_n],
                      lambda = df_lambda.1se_n[best_id_n])
+saveRDS(fit_best_t, file = "model_t.rds")
+saveRDS(fit_best_n, file = "model_n.rds")
 model_coefs_t <- coef(fit_best_t)
 model_coefs_n <- coef(fit_best_n)
 write.csv(as.matrix(model_coefs_t), paste0(dir_results, "model/model_coefs_t.csv"))

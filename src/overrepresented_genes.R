@@ -4,8 +4,12 @@
 ###   Date: 17/02/2025                                 ###
 ##########################################################
 
+setwd("/group/iorio/Irene/epiclock_dev")
+library(minfi)
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(dplyr)
 # Load data
-coefs <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/model_coefs.csv", row.names = 1)
+coefs <- read.csv("results/TCGA/model/model_coefs.csv", row.names = 1)
 cpgs <- rownames(coefs)[coefs[,1] != 0][-1]
 
 # Get genes
@@ -28,7 +32,7 @@ cpg_counts <- gene_long %>%
   group_by(UCSC_RefGene_Name) %>%
   summarise(CpG_count = n(), .groups = "drop")
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_by_gene.png",
+png(filename = "results/TCGA/plots/cpgs_by_gene.png",
     width = 5, height = 5, units = 'in', res = 300)
 ggplot(cpg_counts, aes(x = as.factor(CpG_count))) +
   geom_bar() +
@@ -50,7 +54,7 @@ gene_ranges <- gene_long %>%
             CpG_count = unique(CpG_count))
 
 # Plot
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/overrepresented_genes.png",
+png(filename = "results/TCGA/plots/overrepresented_genes.png",
     width = 10, height = 6, units = 'in', res = 300)
 ggplot(gene_long[gene_long$CpG_count > 5,], aes(x = s0, y = reorder(UCSC_RefGene_Name, CpG_count))) +
   facet_wrap(~ CpG_count, scales = "free_y", labeller = labeller(CpG_count = function(x) paste(x, "CpGs/Gene"))) +
@@ -68,5 +72,5 @@ dev.off()
 # Save info
 openxlsx::write.xlsx(list("Gene_counts" = cpg_counts[order(cpg_counts$CpG_count),],
                           "Gene_counts_annotation" = gene_long),
-                     "/Volumes/iorio/Irene/git_epiclock/res/overrepresented_genes.xlsx",
+                     "results/TCGA/overrepresented_genes.xlsx",
                      colNames = TRUE, rowNames = FALSE)

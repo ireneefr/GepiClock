@@ -4,16 +4,17 @@
 ###   Date: 25/02/2025                           ###
 ####################################################
 
-source("/Volumes/iorio/Irene/git_epiclock/src/utils.R")
+setwd("/group/iorio/Irene/epiclock_dev")
+source("src/utils.R")
 library(caret)
 library(tidyr)
 library(dplyr)
 library(ggplot2)
 library(ggpubr)
-dir_results <- "/Volumes/iorio/Irene/git_epiclock/res/"
+dir_results <- "results/TCGA/"
 
 # Load data
-tcga_samples <- TCGA_samples(dir_data = "/Volumes/iorio/Irene/epiclock/data/")
+tcga_samples <- TCGA_samples(dir_data = "/group/iorio/Irene/legacy/epiclock_old/data/")
 # Create categorical age variable
 tcga_samples$age_cat <- cut(tcga_samples$age_at_index, 
                             breaks = seq(0, max(tcga_samples$age_at_index, na.rm = TRUE) + 1, by = 10), 
@@ -32,12 +33,12 @@ samples_model <- samples_tumor[!(samples_tumor$patient %in% c(samples_normal$pat
 samples_nomodel <- samples_tumor[!(samples_tumor$patient %in% samples_model$patient),]
 
 # Load predictions
-pred_RebolloI2025 <-  read.csv("/Volumes/iorio/Irene/git_epiclock/res/predictions/pred_RebolloI2025.csv", col.names = c("sample", "RebolloI2025"))
-pred_HorvathS2013 <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/predictions/pred_HorvathS2013.csv", col.names = c("x", "sample", "HorvathS2013"))[,2:3]
-pred_HannumG2013 <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/predictions/pred_HannumG2013.csv", col.names = c("x", "sample", "HannumG2013"))[,2:3]
-pred_HorvathS2018 <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/predictions/pred_HorvathS2018.csv", col.names = c("x", "sample", "HorvathS2018"))[,2:3]
-pred_LevineM2018 <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/predictions/pred_LevineM2018.csv", col.names = c("x", "sample", "LevineM2018"))[,2:3]
-project_pal <- read.csv("/Volumes/iorio/Irene/git_epiclock/metadata/TCGAproject_palette.csv", col.names = c("project", "color"))
+pred_RebolloI2025 <-  read.csv("results/TCGA/predictions/pred_RebolloI2025.csv", col.names = c("sample", "RebolloI2025"))
+pred_HorvathS2013 <- read.csv("results/TCGA/predictions/pred_HorvathS2013.csv", col.names = c("x", "sample", "HorvathS2013"))[,2:3]
+pred_HannumG2013 <- read.csv("results/TCGA/predictions/pred_HannumG2013.csv", col.names = c("x", "sample", "HannumG2013"))[,2:3]
+pred_HorvathS2018 <- read.csv("results/TCGA/predictions/pred_HorvathS2018.csv", col.names = c("x", "sample", "HorvathS2018"))[,2:3]
+pred_LevineM2018 <- read.csv("results/TCGA/predictions/pred_LevineM2018.csv", col.names = c("x", "sample", "LevineM2018"))[,2:3]
+project_pal <- read.csv("metadata/TCGAproject_palette.csv", col.names = c("project", "color"))
 
 
 # Train & Test split
@@ -81,7 +82,7 @@ correlation_by_group <- tcga_samples_sub_plot %>%
             Pval = cor.test(age_at_index, pred_age)$p.value)
 
 # Barplot
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/clocks_performance.png",
+png(filename = "results/TCGA/plots/clocks_performance.png",
     width = 15, height = 7, units = 'in', res = 300)
 ggplot(correlation_by_group, aes(x = Clock, y = R, fill = Sample_type)) +
   geom_col(position = "dodge", width = 0.75) +
@@ -97,7 +98,7 @@ dev.off()
 # Scatterplot
 freq_sample_type <- as.data.frame(table(tcga_samples_sub$sample_type))
 colnames(freq_sample_type) <- c("Sample_type", "Freq")
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/predvschron_RebolloI2025.png",
+png(filename = "results/TCGA/plots/predvschron_RebolloI2025.png",
     width = 15, height = 5, units = 'in', res = 300)
 tcga_samples_sub$Sample_type <- tcga_samples_sub$sample_type
 ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_type)) +

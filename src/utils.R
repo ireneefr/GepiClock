@@ -204,9 +204,9 @@ load_450k_methylation_data <- function(all_b_values_path, iorio_path, annotation
 ############ AgePred() ###################
 # the 'AgePred' function predicts biological age of cell lines using CpG methylation values based on a model’s coefficients
 AgePred_cell_lines <- function(dir_predictions = "/group/iorio/Alessandro.D/EpiClock/results/cell_lines/predictions/",
-                    name, # file name
-                    coefs, # coefficient of the model's CpGs
-                    bval){ # b_values
+                               name, # file name
+                               coefs, # coefficient of the model's CpGs
+                               bval){ # b_values
   
   not0_coefs <- rownames(coefs)[coefs[,1] != 0]
   cpgs_common <- intersect(not0_coefs, rownames(bval))
@@ -368,7 +368,7 @@ run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res) {
   
   significant_results_DSEA_df <- significant_results_DSEA %>%
     mutate(across(where(is.list), ~ sapply(., toString)))
-
+  
   # save results 
   output_path <- "results/cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"
   write_xlsx(significant_results_DSEA_df, output_path)
@@ -847,7 +847,7 @@ load_and_filter_genedep_pancancer <- function(depmap_file, essential_genes_file,
   print(dim(gene_effect_filtered))  # final dimensions
   
   return(list(gene_effect_filtered = gene_effect_filtered, 
-               cl_samples_gene_filtered = cl_samples_gene_filtered))
+              cl_samples_gene_filtered = cl_samples_gene_filtered))
 }
 
 
@@ -1171,11 +1171,11 @@ load_and_filter_genedep_cancer_type <- function(depmap_file, essential_genes_fil
               file = paste0("data/depmap/cancer_specific/scaled_filtered_DepMat_", cancer_type, "_2024.csv"), 
               row.names = TRUE)
   }
-    
-    return(scaled_DepMat_list)
+  
+  return(scaled_DepMat_list)
   
 }
-  
+
 
 
 
@@ -2137,9 +2137,9 @@ TCGA_Bvalues <- function(dir_data = "/group/iorio/Irene/legacy/epiclock_old/data
 
 # Predict the age
 AgePred_tcga <- function(dir_predictions = "/group/iorio/Irene/git_epiclock/res/predictions/",
-                    name,
-                    coefs,
-                    bval){
+                         name,
+                         coefs,
+                         bval){
   not0_coefs <- coefs[coefs[,2] != 0, 1]
   cpgs_common <- intersect(not0_coefs, rownames(bval))
   cpgs_missing <- not0_coefs[!(not0_coefs %in% cpgs_common)][-1]
