@@ -203,7 +203,7 @@ load_450k_methylation_data <- function(all_b_values_path, iorio_path, annotation
 
 ############ AgePred() ###################
 # the 'AgePred' function predicts biological age of cell lines using CpG methylation values based on a model’s coefficients
-AgePred_cell_lines <- function(dir_predictions = "/group/iorio/Alessandro.D/EpiClock/results/cell_lines/predictions/",
+AgePred_cell_lines <- function(dir_predictions = paste0(results_path, "cell_lines/predictions/"),
                                name, # file name
                                coefs, # coefficient of the model's CpGs
                                bval){ # b_values
@@ -805,7 +805,7 @@ load_and_filter_genedep_pancancer <- function(depmap_file, essential_genes_file,
   gene_effect <- scaled_DepMat[!(rownames(scaled_DepMat) %in% filtered_genes), ]
   
   print(dim(gene_effect))  # check gene count
-  write.csv(gene_effect, "data/depmap/filtered_scaled_DepMat_2024.csv", row.names = TRUE)
+  write.csv(gene_effect, paste0(data_path, "/depmap/filtered_scaled_DepMat_2024.csv"), row.names = TRUE)
   
   # ============================
   # MATCHING CELL LINES
@@ -1168,7 +1168,7 @@ load_and_filter_genedep_cancer_type <- function(depmap_file, essential_genes_fil
   # save scaled and filtered matrices for each cancer type
   for (cancer_type in names(scaled_DepMat_list)) {
     write.csv(scaled_DepMat_list[[cancer_type]], 
-              file = paste0("data/depmap/cancer_specific/scaled_filtered_DepMat_", cancer_type, "_2024.csv"), 
+              file = paste0(data_path, "depmap/cancer_specific/scaled_filtered_DepMat_", cancer_type, "_2024.csv"), 
               row.names = TRUE)
   }
   
@@ -1314,7 +1314,7 @@ anova_genedep_cancer_specific <- function(scaled_DepMat_list, cl_samples_filtere
 # the 'summarize_significant_genes' function prints a summary of significant genes per cancer type
 # and saves them to an Excel file.
 summarize_significant_genes <- function(anova_results, 
-                                        output_file = "results/cell_lines/cell_lines_gene_dependencies/significant_genes_cancer_types/significant_genes_anova_results.xlsx") {
+                                        output_file = paste0(results_path, "cell_lines/cell_lines_gene_dependencies/significant_genes_cancer_types/significant_genes_anova_results.xlsx")) {
   
   significant_summary <- "From the ANOVA analysis (cancer-type specific), the following significant genes were identified:\n"
   
@@ -1412,7 +1412,7 @@ extract_significant_genes <- function(anova_results) {
 # This method ranks grnrd based on the correlation between predicted age and gene dependency (gene effect) 
 # and tests whether specific pathways are significantly enriched among the top-ranked genes.
 run_gsea_cancer_specific <- function(cumulative_correlation_results, 
-                                     output_dir = "results/cell_lines/cell_line_gene_dependencies/gsea_per_cancer_type") {
+                                     output_dir = paste0(results_path,"cell_lines/cell_line_gene_dependencies/gsea_per_cancer_type")) {
   
   set.seed(123)
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE) # create output directory if it does not exist

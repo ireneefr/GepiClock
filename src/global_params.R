@@ -8,9 +8,9 @@
 
 # directories
 epiclock <- "/group/iorio/Alessandro.D/epiclock" # working directory
-data_path <- "data/"
+data_path <- "/group/iorio/Alessandro.D/legacy/EpiClock/data/" # old path: data are still stored here; in the end will be <- "data/"
 metadata_path <- "metadata/"
-CpGs_path <- "results/model/"
+CpGs_path <- "/group/iorio/Irene/git_epiclock/res/model/" # old path: data are still stored here; in the end will be <- "results/model/"
 results_path <- "results/"
 figures_path <- "results/plots/"
 

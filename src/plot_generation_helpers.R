@@ -255,24 +255,29 @@ plot_predage_LNIC50_correlation_pan_drug <- function(correlation_results_ANOVA) 
 
 # plot the output of the pancancer dsea in a dotplot customized to have young and old specific colors
 dsea_pancancer_dotplot <- function(dsea_result, title) {
-  dsea_results_df <- as.data.frame(dsea_result) # df
+  dsea_results_df <- as.data.frame(dsea_result)
   
-  # top 10 pathways
+  # select top 10 pathways with strongest absolute NES
   top_terms <- dsea_results_df %>%
-    arrange(desc(abs(NES))) %>% # order
+    arrange(desc(abs(NES))) %>%
     slice(1:10) %>%
     mutate(
-      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"), # "young" and "old"
-      Significance = -log10(padj) # 
+      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"),
+      Significance = -log10(padj)
     )
+  
+  # order pathways by NES (same as reorder(pathway, NES))
+  ordered_targets <- top_terms %>%
+    arrange(NES) %>%
+    pull(pathway)
   
   color_palette <- c("Young predicted" = "#4C72B0", "Old predicted" = "#E69F00")
   
   # dotplot
   dsea_pan_dotplot <- ggplot(top_terms, aes(x = NES, y = reorder(pathway, NES), size = Significance, color = Young_Old)) +
     geom_point(alpha = 0.7) +
-    scale_color_manual(values = color_palette, name = "Predicted Group") + 
-    scale_size_continuous(range = c(4, 11), name = "-log10(p.adjust)") + 
+    scale_color_manual(values = color_palette, name = "Predicted Group") +
+    scale_size_continuous(range = c(4, 11), name = "-log10(p.adjust)") +
     labs(
       title = NULL,
       x = "Normalized Enrichment Score (NES)",
@@ -287,12 +292,16 @@ dsea_pancancer_dotplot <- function(dsea_result, title) {
       legend.text = element_text(size = 18)
     ) +
     guides(
-      color = guide_legend(override.aes = list(size = 10)), 
-      size = guide_legend(override.aes = list(size = 10))  
+      color = guide_legend(override.aes = list(size = 10)),
+      size = guide_legend(override.aes = list(size = 10))
     )
   
+  # save plot
   output_path <- paste0(figures_path, "DSEA_pancancer_dotplot.png")
   ggsave(output_path, plot = dsea_pan_dotplot, width = 10, height = 8, dpi = 300)
+  
+  # return ordered pathways
+  return(ordered_targets)
 }
 
 
@@ -300,23 +309,25 @@ dsea_pancancer_dotplot <- function(dsea_result, title) {
 
 
 # stacked bar plot showing the number of drugs associated with each statistically significant drug target.
-plot_target_drug_distribution <- function(significant_results_DSEA_df) {
+plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_targets = NULL) {
+  # extract drugs from leadingEdge
   pathway_drugs <- significant_results_DSEA_df %>%
+    filter(pathway %in% ordered_targets) %>%
     mutate(Drug = strsplit(leadingEdge, ", ")) %>%
     unnest(Drug) %>%
     mutate(Drug = trimws(Drug))
   
-  # compute number of drugs per pathway
+  # count number of drugs per pathway
   pathway_drugs_summary <- pathway_drugs %>%
     group_by(pathway) %>%
     summarise(Drug_Count = n(), .groups = "drop")
   
+  # join and apply pathway order
   pathway_drugs <- pathway_drugs %>%
     left_join(pathway_drugs_summary, by = "pathway") %>%
-    arrange(desc(Drug_Count)) %>%
-    mutate(pathway = factor(pathway, levels = unique(pathway)))
+    mutate(pathway = factor(pathway, levels = ordered_targets))
   
-  # barplot
+  # stacked barplot
   drugs_involved <- ggplot(pathway_drugs, aes(x = pathway, fill = Drug)) +
     geom_bar(stat = "count", width = 0.8) +
     labs(
@@ -335,6 +346,7 @@ plot_target_drug_distribution <- function(significant_results_DSEA_df) {
     scale_fill_viridis_d(option = "plasma") +
     coord_flip()
   
+  # save plot
   output_path <- paste0(figures_path, "stacked_bar_plot_pathway_drugs_ordered.png")
   ggsave(output_path, plot = drugs_involved, width = 12, height = 8, dpi = 300)
   
@@ -603,13 +615,7 @@ dsea_cancerspecific_dotplot <- function(significant_results, title) {
       legend.text = element_text(size = 16)     
     ) +     
     guides(color = guide_legend(override.aes = list(size = 8)))       
-  ggsave(
-    paste0(figures_path, "volcano_cancer_specific.png"),
-    plot = volcano_plot,
-    width = 10,
-    height = 8,
-    dpi = 300
-  )
+  
   ggsave(paste0(figures_path, "dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png"), plot = dsea_dotplot, width = 12, height = 8, dpi = 300)       
   
   return(dsea_dotplot) 

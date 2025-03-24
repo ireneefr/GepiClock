@@ -72,8 +72,8 @@ plot_anova_LNIC50_residuals(anova_drug_pancancer_results$residuals)
 dsea_pan_cancer_results <- run_dsea_pan_cancer(anova_drug_pancancer_results$correlation_results, GDSC_age)
 
 # plot drug target enrichment and associated drugs
-dsea_pancancer_dotplot(dsea_result = dsea_pan_cancer_results, "Drug Target Enrichment by Predicted Group")
-plot_target_drug_distribution(dsea_pan_cancer_results)
+ordered_targets <- dsea_pancancer_dotplot(dsea_result = dsea_pan_cancer_results, "Drug Target Enrichment by Predicted Group")
+plot_target_drug_distribution(dsea_pan_cancer_results, ordered_targets)
 
 # ============================
 # CANCER TYPE-SPECIFIC ANALYSIS
