@@ -414,7 +414,7 @@ plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumu
     ) +
     scale_color_manual(values = cancer_colors)
   
-  ggsave(paste0(figures_path, "volcano_cumulative_drugresponse_cancer_specific.png"), plot = drug_volcano_plot, width = 10, height = 8, dpi = 300)
+  ggsave(paste0(figures_path, "volcano_cumulative_drugresponse_cancer_specific.png"), plot = drug_volcano_plot, width = 10, height = 10, dpi = 300)
   
   return(drug_volcano_plot)
 }
@@ -450,7 +450,7 @@ plot_cancer_specific_volcano <- function(cumulative_correlation_results, selecte
     paste0(figures_path, "volcano_cancer_specific.png"),
     plot = volcano_plot,
     width = 10,
-    height = 8,
+    height = 10,
     dpi = 300
   )
   
@@ -461,32 +461,34 @@ plot_cancer_specific_volcano <- function(cumulative_correlation_results, selecte
 
 
 
-# scatter plots for significant drugs found in each cancer type from the ANOVA analysis. Each plot corresponds to a 
-# cell line for the analyzed cancer type
+# scatter plots for significant drugs found in each cancer type from the ANOVA/correlation analysis.
+# each plot corresponds to a cell line for the analyzed cancer type.
 plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
+  
   for (cancer_type in names(significant_drugs_list)) {
     
     # filter data for the specific cancer type
     cancer_data <- GDSC_age_filtered[GDSC_age_filtered$cancer_type == cancer_type, ]
     
-    for (drug in significant_drugs_list[[cancer_type]]) {
+    for (drug in names(significant_drugs_list[[cancer_type]])) {
       
       # filter for the specific drug
       plot_data <- subset(cancer_data, DRUG_NAME == drug)
       
       if (nrow(plot_data) > 0) {
-        # compute correlation and p-value
-        correlation_value <- cor(plot_data$age_prediction, plot_data$LN_IC50, use = "complete.obs")
-        p_value <- cor.test(plot_data$age_prediction, plot_data$LN_IC50, method = "pearson")$p.value
         
-        # retrieve color for the specific cancer type (global_params.R)
+        # get correlation and adj_p_value from significant_drugs_list
+        correlation_value <- significant_drugs_list[[cancer_type]][[drug]]$correlation
+        adj_p_value <- significant_drugs_list[[cancer_type]][[drug]]$adj_p_value
+        
+        # retrieve color for the specific cancer type (defined globally)
         cancer_color <- cancer_colors[[cancer_type]]
         
         # convert MIN_CONC and MAX_CONC to logarithmic scale
         min_conc_log <- log(plot_data$MIN_CONC, base = exp(1))
         max_conc_log <- log(plot_data$MAX_CONC, base = exp(1))
         
-        # compute global min and max for all concentrations
+        # compute global min and max for concentrations
         min_conc_global <- min(min_conc_log, na.rm = TRUE)
         max_conc_global <- max(max_conc_log, na.rm = TRUE)
         
@@ -494,15 +496,18 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
         min_ic50 <- min(plot_data$LN_IC50, na.rm = TRUE)
         max_ic50 <- max(plot_data$LN_IC50, na.rm = TRUE)
         
-        # scatterplot 
+        # find the least dense region for annotation placement
+        coords <- find_empty_space(plot_data$age_prediction, plot_data$LN_IC50, n_grid = 5)
+        
+        # create scatterplot
         drug_plot <- ggplot(plot_data, aes(x = age_prediction, y = LN_IC50)) +
-          geom_point(size = 3, alpha = 0.8, color = cancer_color) + 
-          geom_smooth(method = "lm", color = "black") +  
+          geom_point(size = 3, alpha = 0.8, color = cancer_color) +
+          geom_smooth(method = "lm", color = "black") +
           geom_hline(yintercept = max_conc_global, linetype = "dashed", color = "blue", size = 1) +
           geom_hline(yintercept = min_conc_global, linetype = "dashed", color = "blue", size = 1) +
           theme_minimal(base_size = 30) +
           labs(
-            title = paste(drug, "in", cancer_type),
+            title = paste(drug),
             x = "Predicted Age",
             y = "LN_IC50"
           ) +
@@ -511,18 +516,19 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
             label = paste0(
               "N = ", nrow(plot_data),
               "\nR = ", round(correlation_value, 3),
-              "\np.val = ", ifelse(p_value < 2.2e-16, "< 2.2e-16", round(p_value, 5))
+              "\nadj p.val = ", ifelse(adj_p_value < 2.2e-16, "< 2.2e-16", round(adj_p_value, 3))
             ),
-            x = max(plot_data$age_prediction, na.rm = TRUE) * 0.5,
-            y = min_ic50 + (max_ic50 - min_ic50) * 0.2,
+            x = coords["x"],
+            y = coords["y"],
             size = 10,
             hjust = 0
           ) +
           theme(
-            legend.position = "none",  
+            legend.position = "none",
             panel.border = element_rect(color = "black", fill = NA, size = 1.5)
           )
         
+        # save plot
         ggsave(
           paste0(figures_path, "drugs/drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".png"),
           plot = drug_plot,
@@ -530,6 +536,7 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
           height = 8,
           dpi = 300
         )
+        
       } else {
         print(paste("No data available for", drug, "in", cancer_type))
       }

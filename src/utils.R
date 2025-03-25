@@ -526,29 +526,74 @@ summarize_significant_drugs <- function(anova_results,
 
 
 ############ extract_significant_drugs() ###################
-# The 'extract_significant_drugs' function extract the significant drugs per cancer type
+# The 'extract_significant_drugs' function extracts the significant drugs per cancer type
+# including their adjusted p-values and correlations
 extract_significant_drugs <- function(anova_results) {
   significant_drugs_list <- list()
   
   # retrieve significant drugs from ANOVA results
   for (cancer_type in names(anova_results$anova_results)) {
     significant_drugs <- anova_results$anova_results[[cancer_type]]$significant_drugs
+    
     if (!is.null(significant_drugs) && is.data.frame(significant_drugs) && nrow(significant_drugs) > 0) {
-      significant_drugs_list[[cancer_type]] <- unique(significant_drugs$DRUG_NAME)
+      drug_list <- list()
+      for (i in seq_len(nrow(significant_drugs))) {
+        drug_name <- significant_drugs$DRUG_NAME[i]
+        drug_list[[drug_name]] <- list(
+          adj_p_value = significant_drugs$adj_p_value[i],
+          correlation = significant_drugs$correlation[i]
+        )
+      }
+      significant_drugs_list[[cancer_type]] <- drug_list
     }
   }
   
-  # retrieve significant drugs from direct correlation results (for cancer types without ANOVA)
+  # retrieve significant drugs from correlation results (cancer types without ANOVA)
   for (cancer_type in names(anova_results$correlation_results)) {
     significant_drugs <- anova_results$correlation_results[[cancer_type]]
+    
     if (!is.null(significant_drugs) && is.data.frame(significant_drugs) && nrow(significant_drugs) > 0) {
-      significant_drugs_list[[cancer_type]] <- unique(significant_drugs$DRUG_NAME)
+      drug_list <- list()
+      for (i in seq_len(nrow(significant_drugs))) {
+        drug_name <- significant_drugs$DRUG_NAME[i]
+        drug_list[[drug_name]] <- list(
+          adj_p_value = significant_drugs$adj_p_value[i],  
+          correlation = significant_drugs$correlation[i]
+        )
+      }
+      significant_drugs_list[[cancer_type]] <- drug_list
     }
   }
   
-  print(significant_drugs_list)  # debugging step to check if all cancer types are present
-  
+  print(significant_drugs_list)  
   return(significant_drugs_list)
+}
+
+
+
+
+############ find_empty_space() ###################
+# The 'find_empty_space' function helps to find the emptiest area in a scatterplot using a grid
+find_empty_space <- function(x, y, n_grid = 5) {
+  x_breaks <- quantile(x, probs = seq(0, 1, length.out = n_grid + 1), na.rm = TRUE)
+  y_breaks <- quantile(y, probs = seq(0, 1, length.out = n_grid + 1), na.rm = TRUE)
+  
+  counts <- matrix(0, nrow = n_grid, ncol = n_grid)
+  
+  for (i in seq_len(n_grid)) {
+    for (j in seq_len(n_grid)) {
+      in_cell <- x >= x_breaks[i] & x < x_breaks[i + 1] &
+        y >= y_breaks[j] & y < y_breaks[j + 1]
+      counts[i, j] <- sum(in_cell, na.rm = TRUE)
+    }
+  }
+  
+  min_idx <- which(counts == min(counts), arr.ind = TRUE)[1, ]
+  
+  x_pos <- mean(c(x_breaks[min_idx[1]], x_breaks[min_idx[1] + 1]))
+  y_pos <- mean(c(y_breaks[min_idx[2]], y_breaks[min_idx[2] + 1]))
+  
+  return(c(x = x_pos, y = y_pos))
 }
 
 
