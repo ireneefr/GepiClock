@@ -893,7 +893,7 @@ plot_predage_geneDep_cumulative_correlation_cancer_specific <- function(cumulati
   
   # save the plot
   ggsave(paste0(figures_path, "volcano_cumulative_geneDep_cancer_specific.png"), 
-         plot = gene_volcano_plot, width = 10, height = 8, dpi = 300)
+         plot = gene_volcano_plot, width = 10, height = 10, dpi = 300)
   
   return(gene_volcano_plot)  
 }
@@ -927,7 +927,7 @@ plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results,
   
   # save the plot
   ggsave(paste0(figures_path, "volcano_cancer_specific_geneDep.png"), 
-         plot = volcano_plot, width = 10, height = 8, dpi = 300)
+         plot = volcano_plot, width = 10, height = 10, dpi = 300)
   
   return(volcano_plot)  
 }
@@ -936,8 +936,8 @@ plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results,
 
 
 
-# scatter plots for significant genes found in each cancer type from the ANOVA analysis. Each plot corresponds to a 
-# cell line for the analyzed cancer type
+# scatter plots for significant genes found in each cancer type from the anova/correlation analysis.
+# each plot corresponds to a cell line for the analyzed cancer type.
 plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list) {
   
   for (cancer_type in names(significant_genes_list)) {
@@ -945,19 +945,22 @@ plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list
     # filter data for the specific cancer type
     cancer_data <- gene_dep_age_filtered[gene_dep_age_filtered$cancer_type == cancer_type, ]
     
-    for (gene in significant_genes_list[[cancer_type]]) {
+    for (gene in names(significant_genes_list[[cancer_type]])) {
       
       # filter for the specific gene
       plot_data <- subset(cancer_data, Gene == gene)
       
       if (nrow(plot_data) > 0) {
         
-        # compute correlation and p-value
-        correlation_value <- cor(plot_data$age_prediction, plot_data$gene_effect, use = "complete.obs")
-        p_value <- cor.test(plot_data$age_prediction, plot_data$gene_effect, method = "pearson")$p.value
+        # get correlation and adj_p_value from significant_genes_list
+        correlation_value <- significant_genes_list[[cancer_type]][[gene]]$correlation
+        adj_p_value <- significant_genes_list[[cancer_type]][[gene]]$adj_p_value
         
         # retrieve color for the specific cancer type
         cancer_color <- cancer_colors[[cancer_type]]
+        
+        # find the least dense region for annotation placement
+        coords <- find_empty_space(plot_data$age_prediction, plot_data$gene_effect, n_grid = 5)
         
         # scatter plot
         gene_plot <- ggplot(plot_data, aes(x = age_prediction, y = gene_effect)) +
@@ -965,7 +968,7 @@ plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list
           geom_smooth(method = "lm", color = "black") +
           theme_minimal(base_size = 30) +
           labs(
-            title = paste(gene, "in", cancer_type),
+            title = paste(gene),
             x = "Predicted Age",
             y = "Gene Dependency Score"
           ) +
@@ -974,10 +977,10 @@ plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list
             label = paste0(
               "N = ", nrow(plot_data),
               "\nR = ", round(correlation_value, 3),
-              "\np.val = ", ifelse(p_value < 2.2e-16, "< 2.2e-16", round(p_value, 5))
+              "\nadj p.val = ", ifelse(adj_p_value < 2.2e-16, "< 2.2e-16", round(adj_p_value, 5))
             ),
-            x = max(plot_data$age_prediction, na.rm = TRUE) * 0.2,
-            y = mean(plot_data$gene_effect, na.rm = TRUE) * 0.9, 
+            x = coords["x"],
+            y = coords["y"],
             size = 10,
             hjust = 0
           ) +
@@ -986,7 +989,7 @@ plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list
             panel.border = element_rect(color = "black", fill = NA, size = 1.5)
           )
         
-        # save the plot
+        # save 
         ggsave(
           paste0(figures_path, "genes/gene_", gsub(" ", "_", gene), "_", gsub(" ", "_", cancer_type), ".png"),
           plot = gene_plot,

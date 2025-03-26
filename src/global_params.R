@@ -62,7 +62,7 @@ cancer_colors <- c(
   "Unknown" = "#f2f2f2"
 )
 
-
+# cell lines' tissue of origin colors
 tissue_colors <- c(
   "Adrenal Gland" = "#a6a6a6",
   "Biliary Tract"	= "#c6b843",

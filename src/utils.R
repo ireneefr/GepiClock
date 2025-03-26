@@ -1420,33 +1420,52 @@ summarize_significant_genes <- function(anova_results,
 
 
 ############ extract_significant_genes() ###################
-# the 'extract_significant_genes' function extract the significant genes per cancer type
+# the 'extract_significant_genes' function extracts the significant genes per cancer type
+# including their adjusted p-values and correlations
+
 extract_significant_genes <- function(anova_results) {
   
-  significant_genes_list <- list() # initialize list
+  significant_genes_list <- list()  # initialize list
   
-  # retrieve significant genes from ANOVA results
+  # retrieve significant genes from anova results
   for (cancer_type in names(anova_results$anova_results)) {
     significant_genes <- anova_results$anova_results[[cancer_type]]$significant_genes
     
     if (!is.null(significant_genes) && is.data.frame(significant_genes) && nrow(significant_genes) > 0) {
-      significant_genes_list[[cancer_type]] <- unique(significant_genes$Gene)
+      gene_list <- list()
+      for (i in seq_len(nrow(significant_genes))) {
+        gene_name <- significant_genes$Gene[i]
+        gene_list[[gene_name]] <- list(
+          adj_p_value = significant_genes$adj_p_value[i],
+          correlation = significant_genes$correlation[i]
+        )
+      }
+      significant_genes_list[[cancer_type]] <- gene_list
     }
   }
   
-  # retrieve significant genes from direct correlation results (for cancer types without ANOVA)
+  # retrieve significant genes from correlation results (cancer types without anova)
   for (cancer_type in names(anova_results$correlation_results)) {
     significant_genes <- anova_results$correlation_results[[cancer_type]]
     
     if (!is.null(significant_genes) && is.data.frame(significant_genes) && nrow(significant_genes) > 0) {
-      significant_genes_list[[cancer_type]] <- unique(significant_genes$Gene)
+      gene_list <- list()
+      for (i in seq_len(nrow(significant_genes))) {
+        gene_name <- significant_genes$Gene[i]
+        gene_list[[gene_name]] <- list(
+          adj_p_value = significant_genes$adj_p_value[i],
+          correlation = significant_genes$correlation[i]
+        )
+      }
+      significant_genes_list[[cancer_type]] <- gene_list
     }
   }
   
-  print(significant_genes_list)  # debugging step to check extracted genes
+  print(significant_genes_list)  # check extracted genes
   
   return(significant_genes_list)
 }
+
 
 
 
