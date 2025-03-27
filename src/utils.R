@@ -970,9 +970,9 @@ generate_merged_gene_dataset <- function(gene_effect_filtered, cl_samples, thres
 
 
 ############ anova_analysis_genedep_pan() ###################
-# The 'anova_analysis_genedep_pan' function performs an ANOVA analysis to assess 
+# the 'anova_analysis_genedep_pan' function performs an ANOVA analysis to assess 
 # the effects of tissue/cancer type and MSI status on gene dependency (gene effect). 
-# It then computes the correlation between the residuals and predicted age.
+# it then computes the correlation between the residuals and predicted age.
 
 anova_analysis_genedep_pan <- function(gene_dep_age) {   
   # run ANOVA with tissue/cancer type and MSI status as factors
