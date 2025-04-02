@@ -2200,7 +2200,7 @@ TCGA_Bvalues <- function(dir_data = "/group/iorio/Irene/legacy/epiclock_old/data
 }
 
 # Predict the age
-AgePred_tcga <- function(dir_predictions = "/group/iorio/Irene/git_epiclock/res/predictions/",
+AgePred_tcga <- function(dir_predictions = "/group/iorio/Irene/epiclock_dev/results/TCGA/predictions/",
                          name,
                          coefs,
                          bval){

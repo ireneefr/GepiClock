@@ -31,28 +31,19 @@ levine_pred <- methyAge(t(tcga_bval), clock="LevineM2018", inputation = FALSE, s
 write.csv(levine_pred, "results/TCGA/predictions/pred_LevineM2018.csv")
 
 # RebolloI2025 predictions
-model <- readRDS("results/TCGA/model/model.rds")
-model_pred <- predict(model, t(tcga_bval))
-write.csv(model_pred, "results/TCGA/predictions/pred_RebolloI2025.csv")
-# coefs <- read.csv("/group/iorio/Irene/git_epiclock/res/model/model_coefs.csv")
-# AgePred_tcga(name = "pred_RebolloI2025.csv",
-#         coefs = coefs,
-#         bval = t(tcga_bval))
+coefs <- read.csv("/group/iorio/Irene/git_epiclock/res/model/model_coefs.csv")
+AgePred_tcga(name = "pred_RebolloI2025.csv",
+        coefs = coefs,
+        bval = t(tcga_bval))
 
 # Model paired tumor predictions
-model_t <- readRDS("results/TCGA/model/model_t.rds")
-model_t_pred <- predict(model, t(tcga_bval))
-write.csv(model_t_pred, "results/TCGA/predictions/pred_paired_t.csv")
-# coefs <- read.csv("/group/iorio/Irene/git_epiclock/res/model/model_coefs_t.csv")
-# AgePred_tcga(name = "pred_paired_t.csv",
-#         coefs = coefs,
-#         bval = t(tcga_bval))
+coefs <- read.csv("/group/iorio/Irene/git_epiclock/res/model/model_coefs_t.csv")
+AgePred_tcga(name = "pred_paired_t.csv",
+        coefs = coefs,
+        bval = t(tcga_bval))
 
 # Model paired normal predictions
-model_n <- readRDS("results/TCGA/model/model_n.rds")
-model_n_pred <- predict(model, t(tcga_bval))
-write.csv(model_n_pred, "results/TCGA/predictions/pred_paired_n.csv")
-# coefs <- read.csv("/group/iorio/Irene/git_epiclock/res/model/model_coefs_n.csv")
-# AgePred_tcga(name = "pred_paired_n.csv",
-#         coefs = coefs,
-#         bval = t(tcga_bval))
+coefs <- read.csv("/group/iorio/Irene/git_epiclock/res/model/model_coefs_n.csv")
+AgePred_tcga(name = "pred_paired_n.csv",
+        coefs = coefs,
+        bval = t(tcga_bval))
