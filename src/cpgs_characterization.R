@@ -41,7 +41,7 @@ gene_region_shared <- get_gene_region_stats(ann_cpgs_shared, "Illumina450k")
 combined_data <- bind_rows(gene_region, gene_region_shared)
 
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_gene.png",
-    width = 10, height = 5, units = 'in', res = 300)
+    width = 10, height = 5, units = 'in', res = 600)
 ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
@@ -89,7 +89,7 @@ combined_data_sorted <- combined_data %>%
   arrange(group)
 
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_region.png",
-    width = 10, height = 5, units = 'in', res = 300)
+    width = 10, height = 5, units = 'in', res = 600)
 ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = RColorBrewer::brewer.pal(length(unique(cpg_group_sorted$group)), "Set2"),

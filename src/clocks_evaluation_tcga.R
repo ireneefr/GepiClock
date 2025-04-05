@@ -82,24 +82,24 @@ correlation_by_group <- tcga_samples_sub_plot %>%
             Pval = cor.test(age_at_index, pred_age)$p.value)
 
 # Barplot
-png(filename = "results/TCGA/plots/clocks_performance.png",
-    width = 15, height = 7, units = 'in', res = 300)
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/clocks_performance.png",
+    width = 10, height = 7, units = 'in', res = 600)
 ggplot(correlation_by_group, aes(x = Clock, y = R, fill = Sample_type)) +
   geom_col(position = "dodge", width = 0.75) +
-  scale_fill_manual(name = "Data subset", values = color_type) +
+  scale_fill_manual(name = "", values = color_type) +
   xlab("") + ylab("Pearson Correlation (R)") + ylim(c(0,1)) +
   scale_x_discrete(limits=rev) +
-  theme_bw(base_size = 25) + 
-  theme(axis.text.x = element_text(color = "black"),  # Change x-axis tick name color
-        axis.text.y = element_text(color = "black")) +   # Change y-axis tick name color
+  theme_bw(base_size = 20) + 
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "bottom") +
   coord_flip()
 dev.off()
 
 # Scatterplot
 freq_sample_type <- as.data.frame(table(tcga_samples_sub$sample_type))
 colnames(freq_sample_type) <- c("Sample_type", "Freq")
-png(filename = "results/TCGA/plots/predvschron_RebolloI2025.png",
-    width = 15, height = 5, units = 'in', res = 300)
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/predvschron_RebolloI2025.png",
+    width = 5, height = 10, units = 'in', res = 600)
 tcga_samples_sub$Sample_type <- tcga_samples_sub$sample_type
 ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_type)) +
   geom_point(color = "black", shape = 21, alpha = 0.6, size = 2) +
@@ -114,11 +114,13 @@ ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_t
   geom_text(data = correlation_by_group[correlation_by_group$Clock == "RebolloI2025",],
             aes(x = 5, y = 83, label = paste("Pval =", formatC(Pval, format = "e", digits = 0))),  
             inherit.aes = FALSE, size = 5, hjust = 0) +
-  facet_wrap(.~Sample_type) +
+  facet_wrap(.~Sample_type, ncol = 1) +
   xlab("Chronological Age") + ylab("Predicted Age") +
   xlim(c(0, 100)) + ylim(c(0, 100)) +
   theme_bw(base_size = 20) +
-  guides(fill = guide_legend(override.aes = list(size = 4)))
+  theme(legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_text(color = "black"))
 dev.off()
 
 # # Obtain correlations by project - Not working :')

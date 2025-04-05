@@ -80,18 +80,23 @@ mcols(genomic_windows) <- cbind(mcols(genomic_windows), df_test)
 genomic_windows$sig <- ifelse(genomic_windows$padj<=0.05, 10, NA)
 genomic_windows$ypos <- 1
 
-# png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_karyogram.png",
-#     width = 10, height = 6, units = 'in', res = 300)
-# ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
-#   scale_fill_gradient(low = "white", high = "red", na.value = "white") +
-#   labs(fill = 'CpGs/Mb') +
-#   theme(panel.background = element_blank(),
-#         strip.background = element_blank(),
-#         strip.text = element_text(size = 10, face = "bold"))
-# dev.off()
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_karyogram.png",
+    width = 10, height = 6, units = 'in', res = 600)
+ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
+  scale_fill_gradient(low = "white", high = "red", na.value = "white") +
+  labs(fill = 'CpGs/Mb') +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        axis.text = element_text(color = "black"),
+        text = element_text(size = 15),
+        legend.position = c(0.9, 0.5),
+        strip.placement.y = "outside",
+        strip.text.y.left = element_text(angle = 0, hjust = 1, vjust = 0.5)) +
+  facet_grid(rows = vars(seqnames), switch = "y")
+dev.off()
 
-png(filename = "results/TCGA/plots/cpgs_karyogram_hypergeometric.png",
-    width = 10, height = 6, units = 'in', res = 300)
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_karyogram_hypergeometric.png",
+    width = 10, height = 6, units = 'in', res = 600)
 ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
   scale_fill_gradient(low = "white", high = "red", na.value = "white") +
   layout_karyogram(data = genomic_windows, aes(x = (start+end)/2, y = log_padj), geom = "line", color = "black", size = 0.4) +
@@ -103,8 +108,8 @@ ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
         panel.spacing.y = unit(0, "lines"))
 dev.off()
 
-png(filename = "results/TCGA/plots/cpgs_karyogram_hypergeometric_coefs.png",
-    width = 10, height = 6, units = 'in', res = 300)
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_karyogram_hypergeometric_coefs.png",
+    width = 10, height = 6, units = 'in', res = 600)
 ggbio::autoplot(genomic_windows, aes(fill = mean_coef), layout = "karyogram") +
   scale_fill_gradient2(low = "orange", mid = "white", high = "purple", na.value = "white") +
   layout_karyogram(data = genomic_windows, aes(x = (start+end)/2, y = log_padj), geom = "line", color = "black", size = 0.4) +
