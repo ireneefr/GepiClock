@@ -156,8 +156,8 @@ fit_best_t <- glmnet(x = x.train_t, y = y.train_t,
 fit_best_n <- glmnet(x = x.train_n, y = y.train_n,
                      alpha = df_alpha_n[best_id_n],
                      lambda = df_lambda.1se_n[best_id_n])
-saveRDS(fit_best_t, file = "model_t.rds")
-saveRDS(fit_best_n, file = "model_n.rds")
+saveRDS(fit_best_t, file = paste0(dir_results, "model/model_t.rds"))
+saveRDS(fit_best_n, file = paste0(dir_results, "model/model_n.rds"))
 model_coefs_t <- coef(fit_best_t)
 model_coefs_n <- coef(fit_best_n)
 write.csv(as.matrix(model_coefs_t), paste0(dir_results, "model/model_coefs_t.csv"))
