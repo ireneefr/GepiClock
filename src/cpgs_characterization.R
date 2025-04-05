@@ -12,57 +12,108 @@ library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 library(dplyr)
 library(clusterProfiler)
 library(org.Hs.eg.db)
-library(missMethyl)
 library(ggplot2)
 library(VennDiagram)
 
 # Load data
 model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
 model_coefs <- subset(model_coefs, s0 != 0) #4863  2
+cpgs_shared <- CpGshared()
 ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-ann_model_cpgs <- merge(ann, model_coefs, by.x = "row.names", by.y = "X")
+ann_model_cpgs <- as.data.frame(merge(ann, model_coefs, by.x = "row.names", by.y = "X"))
+ann_cpgs_shared <- as.data.frame(ann[rownames(ann) %in% cpgs_shared,])
 
 # CpGs outside gene region
-gene_region <- as.data.frame(ann_model_cpgs) %>% 
-  mutate(group = ifelse(ann_model_cpgs$UCSC_RefGene_Name == "", "No gene", "Gene")) %>%
-  group_by(group) %>%
-  summarize(n = n()) %>%
-  mutate(percentage = n / sum(n) * 100)
+# Helper function to calculate gene region statistics
+get_gene_region_stats <- function(data, source_name) {
+  data %>%
+    mutate(group = ifelse(UCSC_RefGene_Name == "", "No gene", "Gene")) %>%
+    group_by(group) %>%
+    summarize(n = n(), .groups = 'drop') %>%
+    mutate(percentage = n / sum(n) * 100, source = source_name)
+}
 
-png(filename = "results/TCGA/plots/cpgs_gene.png",
-    width = 5, height = 5, units = 'in', res = 300)
-ggplot(gene_region, aes(x = "", y = n, fill = group)) +
-  geom_bar(stat = "identity", width = 1) +
-  coord_polar(theta = "y") +
-  scale_fill_manual(values = c('deepskyblue3', 'grey80'),
-                    labels = paste(gene_region$group, " (", round(gene_region$percentage, 1), "%)", sep = ""),
-                    name = "") +
-  theme_void(base_size = 20)
+# Calculate statistics for both datasets
+gene_region <- get_gene_region_stats(ann_model_cpgs, "RebolloI2025")
+gene_region_shared <- get_gene_region_stats(ann_cpgs_shared, "Illumina450k")
+
+# Combine both datasets
+combined_data <- bind_rows(gene_region, gene_region_shared)
+
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_gene.png",
+    width = 10, height = 5, units = 'in', res = 300)
+ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
 dev.off()
+
+# png(filename = "results/TCGA/plots/cpgs_gene.png",
+#     width = 5, height = 5, units = 'in', res = 300)
+# ggplot(gene_region, aes(x = "", y = n, fill = group)) +
+#   geom_bar(stat = "identity", width = 1) +
+#   coord_polar(theta = "y") +
+#   scale_fill_manual(values = c('deepskyblue3', 'grey80'),
+#                     labels = paste(gene_region$group, " (", round(gene_region$percentage, 1), "%)", sep = ""),
+#                     name = "") +
+#   theme_void(base_size = 20)
+# dev.off()
 
 # Gene group representation
-cpg_group <- as.data.frame(ann_model_cpgs) %>%
-  mutate(group = strsplit(as.character(ann_model_cpgs$UCSC_RefGene_Group), ";")) %>% 
-  unnest(group) %>%
-  group_by(group) %>%
-  summarize(n = n()) %>%
-  mutate(percentage = n / sum(n) * 100)
+# Helper function to calculate gene region statistics
+get_gene_group_stats <- function(data, source_name) {
+  data %>%
+    mutate(group = strsplit(as.character(UCSC_RefGene_Group), ";")) %>%
+    unnest(group) %>%
+    group_by(group) %>%
+    summarize(n = n(), .groups = 'drop') %>%
+    mutate(percentage = n / sum(n) * 100, source = source_name)
+}
+
+# Calculate statistics for both datasets
+gene_group <- get_gene_group_stats(ann_model_cpgs, "RebolloI2025")
+gene_group_shared <- get_gene_group_stats(ann_cpgs_shared, "Illumina450k")
+
+# Combine both datasets
+combined_data <- bind_rows(gene_group, gene_group_shared)
 
 gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
-cpg_group$group <- factor(cpg_group$group, levels = gene_order)
-cpg_group_sorted <- cpg_group %>%
+combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
+combined_data_sorted <- combined_data %>%
   arrange(group)
 
-png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_region.png",
-    width = 5, height = 5, units = 'in', res = 300)
-ggplot(cpg_group_sorted, aes(x = "", y = n, fill = group)) +
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_region.png",
+    width = 10, height = 5, units = 'in', res = 300)
+ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
-  coord_polar(theta = "y") +
   scale_fill_manual(values = RColorBrewer::brewer.pal(length(unique(cpg_group_sorted$group)), "Set2"),
-                    labels = paste(cpg_group_sorted$group, " (", round(cpg_group_sorted$percentage, 1), "%)", sep = ""),
+                    breaks = gene_order,
                     name = "") +
-  theme_void(base_size = 20)
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
 dev.off()
+
+# png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_region.png",
+#     width = 5, height = 5, units = 'in', res = 300)
+# ggplot(cpg_group_sorted, aes(x = "", y = n, fill = group)) +
+#   geom_bar(stat = "identity") +
+#   coord_polar(theta = "y") +
+#   scale_fill_manual(values = RColorBrewer::brewer.pal(length(unique(cpg_group_sorted$group)), "Set2"),
+#                     labels = paste(cpg_group_sorted$group, " (", round(cpg_group_sorted$percentage, 1), "%)", sep = ""),
+#                     name = "") +
+#   theme_void(base_size = 20)
+# dev.off()
 
 
 # Enrichment analysis - No ranking
@@ -202,13 +253,14 @@ dotplot(enrichkegg_pos, title = "KEGG")
 dev.off()
 
 
-# Enrichment analysis - CpGs
-go_cpgs_neg <- gometh(cpgs_neg, collection = "GO", array.type = "450K")
-go_cpgs_pos <- gometh(cpgs_pos, collection = "GO", array.type = "450K")
-min(go_cpgs_neg$FDR) # 1 - No significant results
-min(go_cpgs_pos$FDR) # 1 - No significant results
-kegg_cpgs_neg <- gometh(cpgs_neg, collection = "KEGG", array.type = "450K")
-kegg_cpgs_pos <- gometh(cpgs_pos, collection = "KEGG", array.type = "450K")
-min(kegg_cpgs_neg$FDR) # 1 - No significant results
-min(kegg_cpgs_pos$FDR) # 0.2769831 - No significant results
+# # Enrichment analysis - CpGs
+# library(missMethyl)
+# go_cpgs_neg <- gometh(cpgs_neg, collection = "GO", array.type = "450K")
+# go_cpgs_pos <- gometh(cpgs_pos, collection = "GO", array.type = "450K")
+# min(go_cpgs_neg$FDR) # 1 - No significant results
+# min(go_cpgs_pos$FDR) # 1 - No significant results
+# kegg_cpgs_neg <- gometh(cpgs_neg, collection = "KEGG", array.type = "450K")
+# kegg_cpgs_pos <- gometh(cpgs_pos, collection = "KEGG", array.type = "450K")
+# min(kegg_cpgs_neg$FDR) # 1 - No significant results
+# min(kegg_cpgs_pos$FDR) # 0.2769831 - No significant results
 
