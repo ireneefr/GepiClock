@@ -6,6 +6,7 @@
 
 setwd("/group/iorio/Irene/epiclock_dev")
 source("src/utils.R")
+dir_metadata <- "metadata/"
 
 # Load packages
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
@@ -16,10 +17,22 @@ library(ggplot2)
 library(VennDiagram)
 
 # Load data
+load(paste0(dir_metadata, "HorvathS2013.rda"))
+horvath <- coefs
+load(paste0(dir_metadata, "HannumG2013.rda"))
+hannum <- coefs
+load(paste0(dir_metadata, "HorvathS2018.rda"))
+horvath2 <- coefs
+load(paste0(dir_metadata, "LevineM2018.rda"))
+levine <- coefs
 model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
 model_coefs <- subset(model_coefs, s0 != 0) #4863  2
 cpgs_shared <- CpGshared()
 ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+ann_horvath <- as.data.frame(merge(ann, horvath, by.x = "row.names", by.y = "Probe"))
+ann_hannum <- as.data.frame(merge(ann, hannum, by.x = "row.names", by.y = "Probe"))
+ann_horvath2 <- as.data.frame(merge(ann, horvath2, by.x = "row.names", by.y = "Probe"))
+ann_levine <- as.data.frame(merge(ann, levine, by.x = "row.names", by.y = "Probe"))
 ann_model_cpgs <- as.data.frame(merge(ann, model_coefs, by.x = "row.names", by.y = "X"))
 ann_cpgs_shared <- as.data.frame(ann[rownames(ann) %in% cpgs_shared,])
 
@@ -34,14 +47,40 @@ get_gene_region_stats <- function(data, source_name) {
 }
 
 # Calculate statistics for both datasets
+gene_region_horvath <- get_gene_region_stats(ann_horvath, "HorvathS2013")
+gene_region_hannum <- get_gene_region_stats(ann_hannum, "HannumG2013")
+gene_region_horvath2 <- get_gene_region_stats(ann_horvath2, "HorvathS2018")
+gene_region_levine <- get_gene_region_stats(ann_levine, "LevineM2018")
 gene_region <- get_gene_region_stats(ann_model_cpgs, "RebolloI2025")
 gene_region_shared <- get_gene_region_stats(ann_cpgs_shared, "Illumina450k")
 
-# Combine both datasets
-combined_data <- bind_rows(gene_region, gene_region_shared)
+# Combine with Illumina array
+combined_data <- bind_rows(gene_region,
+                           gene_region_shared)
 
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_gene.png",
     width = 10, height = 5, units = 'in', res = 600)
+ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+dev.off()
+
+# Combine with all clocks
+combined_data <- bind_rows(gene_region_horvath,
+                           gene_region_hannum,
+                           gene_region_horvath2,
+                           gene_region_levine,
+                           gene_region)
+
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_gene_clocks.png",
+    width = 8, height = 5, units = 'in', res = 600)
 ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
@@ -77,11 +116,16 @@ get_gene_group_stats <- function(data, source_name) {
 }
 
 # Calculate statistics for both datasets
+gene_group_horvath <- get_gene_group_stats(ann_horvath, "HorvathS2013")
+gene_group_hannum <- get_gene_group_stats(ann_hannum, "HannumG2013")
+gene_group_horvath2 <- get_gene_group_stats(ann_horvath2, "HorvathS2018")
+gene_group_levine <- get_gene_group_stats(ann_levine, "LevineM2018")
 gene_group <- get_gene_group_stats(ann_model_cpgs, "RebolloI2025")
 gene_group_shared <- get_gene_group_stats(ann_cpgs_shared, "Illumina450k")
 
-# Combine both datasets
-combined_data <- bind_rows(gene_group, gene_group_shared)
+# Combine with Illumina array
+combined_data <- bind_rows(gene_group,
+                           gene_group_shared)
 
 gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
 combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
@@ -104,6 +148,33 @@ ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
         panel.grid.minor.x = element_blank())
 dev.off()
 
+# Combine with all clocks
+combined_data <- bind_rows(gene_group_horvath,
+                           gene_group_hannum,
+                           gene_group_horvath2,
+                           gene_group_levine,
+                           gene_group)
+
+gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
+combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
+combined_data_sorted <- combined_data %>%
+  arrange(group)
+
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_region_clocks.png",
+    width = 8, height = 5, units = 'in', res = 600)
+ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = RColorBrewer::brewer.pal(length(unique(cpg_group_sorted$group)), "Set2"),
+                    breaks = gene_order,
+                    name = "") +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+dev.off()
 # png(filename = "/Volumes/iorio/Irene/git_epiclock/res/plots/cpgs_region.png",
 #     width = 5, height = 5, units = 'in', res = 300)
 # ggplot(cpg_group_sorted, aes(x = "", y = n, fill = group)) +
