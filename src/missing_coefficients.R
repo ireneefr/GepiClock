@@ -57,13 +57,13 @@ missing_perc <- seq(0, 1, by = 0.05) # missing CpGs percentages
 for(perc in missing_perc){
   for(i in 1:20){ # 20-CV
     missing_coefs <- sample(not0_coefs, ceiling(perc*length(not0_coefs)))
-    pred_test <- AgePred(name = paste0("missing/test_", perc, "_", i, ".txt"),
+    pred_test <- AgePred_tcga(name = paste0("missing/test_", perc, "_", i, ".txt"),
                          coefs = coefs,
                          bval = t(x.test[, !(colnames(x.test) %in% missing_coefs)]))
-    pred_normal <- AgePred(name = paste0("missing/normal_", perc, "_", i, ".txt"),
+    pred_normal <- AgePred_tcga(name = paste0("missing/normal_", perc, "_", i, ".txt"),
                            coefs = coefs,
                            bval = t(x.normal[, !(colnames(x.normal) %in% missing_coefs)]))
-    pred_tumor <- AgePred(name = paste0("missing/tumor_", perc, "_", i, ".txt"),
+    pred_tumor <- AgePred_tcga(name = paste0("missing/tumor_", perc, "_", i, ".txt"),
                           coefs = coefs,
                           bval = t(x.tumor[, !(colnames(x.tumor) %in% missing_coefs)]))
     print("after AgePred")
@@ -91,9 +91,9 @@ write.csv(res_tumor, paste0(dir_results, "model/tumor_missing.csv"))
 
 # Plot results
 # # Load data
-# res_test <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/test_missing.csv")
-# res_normal <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/normal_missing.csv")
-# res_tumor <- read.csv("/Volumes/iorio/Irene/git_epiclock/res/model/tumor_missing.csv")
+# res_test <- read.csv("/Volumes/iorio/Irene/epiclock_dev/results/TCGA/model/test_missing.csv")
+# res_normal <- read.csv("/Volumes/iorio/Irene/epiclock_dev/results/TCGA/model/normal_missing.csv")
+# res_tumor <- read.csv("/Volumes/iorio/Irene/epiclock_dev/results/TCGA/model/tumor_missing.csv")
 
 # Summarize information
 res_test_summary <- as.data.frame(res_test) %>%
@@ -126,8 +126,8 @@ res <- rbind(res_test_summary, res_normal_summary, res_tumor_summary)
 color_type <- c("Primary Tumour (Test)" = "steelblue1",
                 "Primary Tumour (Others)" = "steelblue3",
                 "Normal Tissue" = "chartreuse3")
-png(filename = "results/TCGA/plots/missing_coefficients.png",
-    width = 12, height = 7, units = 'in', res = 300)
+png(filename = "/group/iorio/Irene/epiclock/plots/missing_coefficients.png",
+    width = 12, height = 7, units = 'in', res = 600)
 ggplot(res, aes(x = Perc_missing, y = mean,
                 ymin = mean-sd, ymax = mean+sd, fill = data, color = data)) +
   geom_line() +
@@ -135,6 +135,6 @@ ggplot(res, aes(x = Perc_missing, y = mean,
   geom_point(shape=21, color="black", size=3) +
   scale_fill_manual(values = color_type, name = "Data subset") +
   scale_color_manual(values = color_type, name = "Data subset") +
-  theme_minimal(base_size = 20) +
+  theme_bw(base_size = 20) +
   xlab("Missing Coefficients (%)") + ylab("Pearson Correlation (R)") 
 dev.off()
