@@ -135,3 +135,78 @@ dev.off()
 # write_xlsx(list("Pearson correlations" = correlation_by_group,
 #                 "Pearson correlations by project" = correlation_by_group2),
 #            path = "/Volumes/iorio/Irene/git_epiclock/res/Pearson_correlations.xlsx")
+
+# Correlation by project in test
+project_correlation <- tcga_samples_sub[tcga_samples_sub$sample_type == "Primary Tumour (Test)",] %>%
+  group_by(project) %>%
+  summarise(correlation = cor(age_at_index, RebolloI2025),
+            N = n()) %>%
+  arrange(correlation) %>%  # arrange by correlation
+  mutate(project = factor(project, levels = project))
+
+# Plot the correlation values in test
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cor_test_project.png",
+    width = 5, height = 10, units = 'in', res = 600)
+ggplot(project_correlation, aes(y = project, x = correlation)) +
+  geom_bar(stat = "identity") +  # stat = "identity" to use the precomputed correlation values
+  theme_minimal(base_size = 15) +
+  labs(y = "", x = "Pearson Correlation (R)")
+dev.off()
+# Plot the frequency values in test
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/freq_test_project.png",
+    width = 5, height = 10, units = 'in', res = 600)
+ggplot(project_correlation, aes(y = project, x = N)) +
+  geom_bar(stat = "identity") +  # stat = "identity" to use the precomputed correlation values
+  theme_minimal(base_size = 15) +
+  labs(y = "", x = "Number of samples")
+dev.off()
+
+# Age distribution by project in test
+tcga_samples_sub$project <- factor(tcga_samples_sub$project, 
+                                   levels = levels(project_correlation$project))
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/age_test_project.png",
+    width = 5, height = 10, units = 'in', res = 600)
+ggplot(tcga_samples_sub[tcga_samples_sub$sample_type == "Primary Tumour (Test)",], aes(x = age_at_index, y = project)) +
+  geom_boxplot() +
+  theme_minimal(base_size = 15) +
+  labs(y = "", x = "Chronological age")
+dev.off()
+
+
+
+
+# Correlation by project in test
+project_correlation <- tcga_samples_sub[tcga_samples_sub$sample_type == "Normal Tissue",] %>%
+  group_by(project) %>%
+  summarise(correlation = cor(age_at_index, RebolloI2025),
+            N = n()) %>%
+  arrange(correlation) %>%  # arrange by correlation
+  mutate(project = factor(project, levels = project))
+
+# Plot the correlation values in test
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cor_normal_project.png",
+    width = 5, height = 10, units = 'in', res = 600)
+ggplot(project_correlation, aes(y = project, x = correlation)) +
+  geom_bar(stat = "identity") +  # stat = "identity" to use the precomputed correlation values
+  theme_minimal(base_size = 15) +
+  labs(y = "", x = "Pearson Correlation (R)")
+dev.off()
+# Plot the frequency values in test
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/freq_normal_project.png",
+    width = 5, height = 10, units = 'in', res = 600)
+ggplot(project_correlation, aes(y = project, x = N)) +
+  geom_bar(stat = "identity") +  # stat = "identity" to use the precomputed correlation values
+  theme_minimal(base_size = 15) +
+  labs(y = "", x = "Number of samples")
+dev.off()
+
+# Age distribution by project in test
+tcga_samples_sub$project <- factor(tcga_samples_sub$project, 
+                                   levels = levels(project_correlation$project))
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/age_normal_project.png",
+    width = 5, height = 10, units = 'in', res = 600)
+ggplot(tcga_samples_sub[tcga_samples_sub$sample_type == "Normal Tissue",], aes(x = age_at_index, y = project)) +
+  geom_boxplot() +
+  theme_minimal(base_size = 15) +
+  labs(y = "", x = "Chronological age")
+dev.off()
