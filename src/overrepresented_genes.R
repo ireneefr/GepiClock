@@ -8,6 +8,10 @@ setwd("/group/iorio/Irene/epiclock_dev")
 library(minfi)
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
 library(dplyr)
+library(ComplexHeatmap)
+library(colorRamp2)
+library(openxlsx)
+
 # Load data
 coefs <- read.csv("results/TCGA/model/model_coefs.csv", row.names = 1)
 cpgs <- rownames(coefs)[coefs[,1] != 0][-1]
@@ -32,8 +36,8 @@ cpg_counts <- gene_long %>%
   group_by(UCSC_RefGene_Name) %>%
   summarise(CpG_count = n(), .groups = "drop")
 
-png(filename = "results/TCGA/plots/cpgs_by_gene.png",
-    width = 5, height = 5, units = 'in', res = 300)
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_by_gene.png",
+    width = 5, height = 5, units = 'in', res = 600)
 ggplot(cpg_counts, aes(x = as.factor(CpG_count))) +
   geom_bar() +
   geom_text(stat = "count", aes(label = ..count..), vjust = -0.5, size = 4) +
@@ -54,8 +58,8 @@ gene_ranges <- gene_long %>%
             CpG_count = unique(CpG_count))
 
 # Plot
-png(filename = "results/TCGA/plots/overrepresented_genes.png",
-    width = 10, height = 6, units = 'in', res = 300)
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/overrepresented_genes.png",
+    width = 10, height = 6, units = 'in', res = 600)
 ggplot(gene_long[gene_long$CpG_count > 5,], aes(x = s0, y = reorder(UCSC_RefGene_Name, CpG_count))) +
   facet_wrap(~ CpG_count, scales = "free_y", labeller = labeller(CpG_count = function(x) paste(x, "CpGs/Gene"))) +
   geom_segment(data = gene_ranges[gene_ranges$CpG_count > 5,],
@@ -69,8 +73,46 @@ ggplot(gene_long[gene_long$CpG_count > 5,], aes(x = s0, y = reorder(UCSC_RefGene
   theme(legend.position = "bottom")
 dev.off()
 
+# Heatmap
+gene_long$Name_Group <- paste0(gene_long$UCSC_RefGene_Group, gene_long$Name)
+# Count CpGs per gene and arrange
+gene_order <- gene_long %>%
+  arrange(desc(CpG_count)) %>%
+  pull(UCSC_RefGene_Name) %>%
+  unique()
+
+# Order CpGs by RefGene group
+order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
+cpg_order <- gene_long %>%
+  mutate(UCSC_RefGene_Group = factor(UCSC_RefGene_Group, levels = order)) %>%
+  arrange(UCSC_RefGene_Group) %>%
+  pull(Name_Group)  %>%
+  unique()
+
+# Pivot to wide matrix: genes as rows, CpGs as columns
+heatmap_matrix <- gene_long[gene_long$CpG_count > 4,] %>%
+  select(UCSC_RefGene_Name, Name_Group, s0) %>%
+  pivot_wider(names_from = Name_Group, values_from = s0) %>%
+  column_to_rownames("UCSC_RefGene_Name")
+
+# Reorder rows and columns
+heatmap_matrix <- heatmap_matrix[gene_order[gene_order %in% rownames(heatmap_matrix)], 
+                                 cpg_order[cpg_order %in% colnames(heatmap_matrix)]]
+
+col_fun <- colorRamp2(c(min(heatmap_matrix, na.rm = TRUE),
+                        max(heatmap_matrix, na.rm = TRUE)),
+                      c("blue", "red"))
+Heatmap(heatmap_matrix,
+        name = "s0",
+        col = col_fun,
+        na_col = "white",
+        cluster_rows = FALSE,
+        cluster_columns = FALSE,
+        row_names_side = "left",
+        column_names_rot = 90,
+        heatmap_legend_param = list(title = "s0"))
 # Save info
-openxlsx::write.xlsx(list("Gene_counts" = cpg_counts[order(cpg_counts$CpG_count),],
-                          "Gene_counts_annotation" = gene_long),
-                     "results/TCGA/overrepresented_genes.xlsx",
-                     colNames = TRUE, rowNames = FALSE)
+write.xlsx(list("Gene_counts" = cpg_counts[order(cpg_counts$CpG_count),],
+                "Gene_counts_annotation" = gene_long),
+                "results/TCGA/overrepresented_genes.xlsx",
+                colNames = TRUE, rowNames = FALSE)
