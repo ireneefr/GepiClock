@@ -199,7 +199,7 @@ model_coefs_ordered <- ann_model_cpgs %>%
          group = factor(UCSC_RefGene_Group, 
                         levels = rev(gene_order))) 
 extreme_points <- model_coefs_ordered %>%
-  filter(abs(s0) > 16) 
+  filter(abs(s0) > 10) 
 
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/coefficients_region.png",
     width = 8, height = 5, units = 'in', res = 600)
@@ -216,6 +216,29 @@ ggplot(model_coefs_ordered, aes(x = x, y = s0, color = group)) +
                   segment.size = 0.5, nudge_x = 400) + 
   ylab("Coefficient value") +
   theme_minimal(base_size = 12) +
+  theme(axis.title.x = element_blank(),
+        axis.text.x = element_blank(),
+        legend.position = "top",
+        legend.title = element_blank()) +
+  guides(color = guide_legend(override.aes = list(size = 4)))
+dev.off()
+
+
+png(filename = "/Volumes/iorio/Irene/epiclock/plots/coefficients_region2.png",
+    width = 7, height = 10, units = 'in', res = 600)
+ggplot(model_coefs_ordered, aes(x = x, y = s0, color = group)) +
+  geom_jitter(width = 500, height = 0.2, size = 2) +
+  scale_color_manual(values = RColorBrewer::brewer.pal(length(gene_order), "Set2"),
+                     breaks = gene_order) +
+  geom_text_repel(data = extreme_points, aes(x = x, y = s0, label = UCSC_RefGene_Name), 
+                  size = 4, 
+                  box.padding = 0.2,      # Increase padding around the labels
+                  point.padding = 0.9,    # Increase space between the point and the label
+                  max.overlaps = Inf,     # Remove overlap limit to give labels more flexibility
+                  min.segment.length = 0, # Allow the labels to move freely
+                  segment.size = 0.5, nudge_x = 500) + 
+  ylab("Coefficient value") +
+  theme_minimal(base_size = 20) +
   theme(axis.title.x = element_blank(),
         axis.text.x = element_blank(),
         legend.position = "top",
