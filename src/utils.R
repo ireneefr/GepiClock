@@ -292,7 +292,7 @@ generate_merged_drug_dataset <- function(GDSC_combined, cl_samples, threshold = 
 # the 'anova_analysis_drugresponse_pan' function performs an ANOVA analysis to assess the effects of tissue/cancer type 
 # and MSI status on drug response (LN_IC50). This ANOVA model helps determine whether different cancer types or MSI status 
 # significantly influence drug sensitivity in cancer cell lines.
-anova_analysis_drugresponse_pan <- function(GDSC_age) {
+anova_analysis_drugresponse_pan <- function(GDSC_age, age_variable) {
   # run ANOVA with tissue/cancer type and MSI status as factors
   anova_age_res <- aov(LN_IC50 ~ as.factor(tissue_or_cancer_chosen) + as.factor(msi_status), data = GDSC_age)
   anova_results_res <- summary(anova_age_res)
@@ -303,8 +303,8 @@ anova_analysis_drugresponse_pan <- function(GDSC_age) {
   correlation_results_ANOVA <- GDSC_age %>%
     group_by(DRUG_NAME) %>%
     summarise(
-      correlation = cor(residuals, age_prediction, use = "complete.obs"),
-      p_value = cor.test(residuals, age_prediction, method = "pearson")$p.value
+      correlation = cor(residuals, .data[[age_variable]], use = "complete.obs"),
+      p_value = cor.test(residuals,.data[[ age_variable]], method = "pearson")$p.value
     ) %>%
     mutate(adj_p_value = p.adjust(p_value, method = "fdr")) %>%
     arrange(desc(correlation))
@@ -328,14 +328,12 @@ anova_analysis_drugresponse_pan <- function(GDSC_age) {
 
 
 
-
-
 ############ run_dsea_pan_cancer() ###################
 # The 'run_dsea_pan_cancer' function performs a Drug Set Enrichment Analysis (DSEA) to assess whether there is still a signal
 # in drug response data after ANOVA correction. This method ranks drugs based on the correlation between their
 # predicted age and residual drug sensitivity (LN_IC50), then tests whether specific drug targets are significantly
 # enriched among the top-ranked drugs.
-run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res) {
+run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res, output_dir) {
   set.seed(123)  
   
   # rank drugs based on correlation between predicted age and ANOVA residuals
@@ -370,7 +368,7 @@ run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res) {
     mutate(across(where(is.list), ~ sapply(., toString)))
   
   # save results 
-  output_path <- "results/cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"
+  output_path <- output_dir
   write_xlsx(significant_results_DSEA_df, output_path)
   
   return(significant_results_DSEA_df)
@@ -383,7 +381,7 @@ run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res) {
 ############ anova_drugresponse_cancer_specific() ###################
 # the 'anova_drugresponse_cancer_specific' function performs an ANOVA analysis to assess the effect of MSI status 
 # on drug response (LN_IC50) within each cancer type (when there is MSI). 
-anova_drugresponse_cancer_specific <- function(GDSC_age_filtered) {
+anova_drugresponse_cancer_specific <- function(GDSC_age_filtered, age_variable) {
   GDSC_age_filtered$msi_status[GDSC_age_filtered$msi_status == ""] <- "MSS" # replace empty values with "MSS"
   
   unique_cancer_types <- unique(GDSC_age_filtered$cancer_type)
@@ -407,8 +405,8 @@ anova_drugresponse_cancer_specific <- function(GDSC_age_filtered) {
       correlation_results <- cancer_data %>%
         group_by(DRUG_NAME) %>%
         summarise(
-          correlation = if (n() > 2) cor(residuals, age_prediction, use = "complete.obs") else NA,
-          p_value = if (n() > 2) cor.test(residuals, age_prediction, method = "pearson")$p.value else NA
+          correlation = if (n() > 2) cor(residuals, .data[[age_variable]], use = "complete.obs") else NA,
+          p_value = if (n() > 2) cor.test(residuals, .data[[age_variable]], method = "pearson")$p.value else NA
         ) %>%
         mutate(adj_p_value = p.adjust(p_value, method = "fdr")) %>%
         arrange(desc(abs(correlation)))
@@ -422,8 +420,8 @@ anova_drugresponse_cancer_specific <- function(GDSC_age_filtered) {
       correlation_results <- cancer_data %>%
         group_by(DRUG_NAME) %>%
         summarise(
-          correlation = if (n() > 2) cor(LN_IC50, age_prediction, use = "complete.obs") else NA,
-          p_value = if (n() > 2) cor.test(LN_IC50, age_prediction, method = "pearson")$p.value else NA
+          correlation = if (n() > 2) cor(LN_IC50, .data[[age_variable]], use = "complete.obs") else NA,
+          p_value = if (n() > 2) cor.test(LN_IC50, .data[[age_variable]], method = "pearson")$p.value else NA
         ) %>%
         mutate(adj_p_value = p.adjust(p_value, method = "fdr")) %>%
         arrange(desc(abs(correlation)))
@@ -465,7 +463,7 @@ anova_drugresponse_cancer_specific <- function(GDSC_age_filtered) {
 # the 'summarize_significant_drugs' function prints a summary of significant drugs per cancer type
 # and saves them to an Excel file.
 summarize_significant_drugs <- function(anova_results,
-                                        output_file = "results/cell_lines/cell_lines_drug_sensitivity/significant_drugs_cancer_types/significant_drugs_anova_results.xlsx") {
+                                        output_file) {
   
   significant_summary <- "From the ANOVA analysis (cancer-type specific), the following significant drugs were identified:\n"
   

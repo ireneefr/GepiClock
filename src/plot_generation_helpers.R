@@ -230,7 +230,7 @@ plot_anova_LNIC50_residuals <- function(residuals_anova_IC50) {
 
 
 # volcano plot of correlation results - ANOVA DRUG PAN
-plot_predage_LNIC50_correlation_pan_drug <- function(correlation_results_ANOVA) {
+plot_predage_LNIC50_correlation_pan_drug <- function(correlation_results_ANOVA, output_dir) {
   volcano_pan_drug <- ggplot(correlation_results_ANOVA, aes(x = correlation, y = -log10(adj_p_value))) +
     geom_point(aes(color = case_when(adj_p_value < 0.05 ~ correlation, TRUE ~ NA_real_)), alpha = 0.5) +
     scale_color_gradient2(low = "red", mid = "grey", high = "blue", midpoint = 0, na.value = "grey") +
@@ -243,7 +243,7 @@ plot_predage_LNIC50_correlation_pan_drug <- function(correlation_results_ANOVA) 
     ) +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "red")
 
-  output_path <- paste0(figures_path, "volcano_ANOVA_drug_pan_cancer.png")
+  output_path <- output_dir
   ggsave(output_path, plot = volcano_pan_drug, width = 10, height = 8, dpi = 300)
   
   return(volcano_pan_drug)
@@ -254,7 +254,7 @@ plot_predage_LNIC50_correlation_pan_drug <- function(correlation_results_ANOVA) 
 
 
 # plot the output of the pancancer dsea in a dotplot customized to have young and old specific colors
-dsea_pancancer_dotplot <- function(dsea_result, title) {
+dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
   dsea_results_df <- as.data.frame(dsea_result)
   
   # select top 10 pathways with strongest absolute NES
@@ -297,7 +297,7 @@ dsea_pancancer_dotplot <- function(dsea_result, title) {
     )
   
   # save plot
-  output_path <- paste0(figures_path, "DSEA_pancancer_dotplot.png")
+  output_path <- output_dir
   ggsave(output_path, plot = dsea_pan_dotplot, width = 10, height = 8, dpi = 300)
   
   # return ordered pathways
@@ -309,7 +309,7 @@ dsea_pancancer_dotplot <- function(dsea_result, title) {
 
 
 # stacked bar plot showing the number of drugs associated with each statistically significant drug target.
-plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_targets = NULL) {
+plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_targets = NULL, output_dir) {
   # extract drugs from leadingEdge
   pathway_drugs <- significant_results_DSEA_df %>%
     filter(pathway %in% ordered_targets) %>%
@@ -347,7 +347,7 @@ plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_t
     coord_flip()
   
   # save plot
-  output_path <- paste0(figures_path, "stacked_bar_plot_pathway_drugs_ordered.png")
+  output_path <- output_dir
   ggsave(output_path, plot = drugs_involved, width = 12, height = 8, dpi = 300)
   
   return(drugs_involved)
@@ -395,7 +395,7 @@ plot_sample_categories_cancer_specific_drug <- function(GDSC_age_included) {
 
 
 # volcano plot for cumulative correlation between drug response and predicted age across cancer types
-plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumulative_correlation_results) {
+plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumulative_correlation_results, output_dir) {
   drug_volcano_plot <- ggplot(cumulative_correlation_results, aes(x = correlation, y = -log10(adj_p_value), color = cancer_type)) +
     geom_point(size = 3, alpha = 0.7) +
     geom_hline(yintercept = -log10(0.05), linetype = "dashed", color = "red", linewidth = 1) +
@@ -414,7 +414,7 @@ plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumu
     ) +
     scale_color_manual(values = cancer_colors)
   
-  ggsave(paste0(figures_path, "volcano_cumulative_drugresponse_cancer_specific.png"), plot = drug_volcano_plot, width = 10, height = 10, dpi = 300)
+  ggsave(output_dir, plot = drug_volcano_plot, width = 10, height = 10, dpi = 300)
   
   return(drug_volcano_plot)
 }
