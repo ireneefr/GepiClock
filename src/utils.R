@@ -602,7 +602,7 @@ find_empty_space <- function(x, y, n_grid = 5) {
 # The 'run_dsea_cancer_specific' function performs Drug Set Enrichment Analysis (DSEA) for each cancer type.
 # This method ranks drugs based on the correlation between predicted age and drug response (LN_IC50) 
 # and tests whether specific drug targets are significantly enriched among the top-ranked drugs.
-run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_filtered) {
+run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_filtered, output_dir) {
   set.seed(123)
   
   # filter correlations and compute mean per cancer type and drug
@@ -675,7 +675,7 @@ run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_fi
   significant_results_df <- significant_results %>%
     mutate(across(where(is.list), ~ sapply(., toString)))
   
-  output_path <- "results/cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"
+  output_path <- output_dir
   write_xlsx(significant_results_df, output_path)
   
   return(significant_results_df)

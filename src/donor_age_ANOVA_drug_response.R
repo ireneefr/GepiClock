@@ -102,9 +102,30 @@ cumulative_correlation_results <- cancer_specific_anova_results$cumulative_corre
 plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug(cumulative_correlation_results,
 output_dir = paste0(figures_path, "donor_age volcano_cumulative_drugresponse_cancer_specific.png"))
 
-# from here to be modified
 # identify cancer types with statistically significant age-drug correlation
-# - ???
-# - ???
-# - ???
+# - Glioblastoma
+# - Neuroblastoma
+
+# extract list of significant drugs per cancer type
+significant_drugs_list <- extract_significant_drugs(cancer_specific_anova_results)
+# plot volcano plots highlighting significant drug-age correlations in these cancer types
+plot_cancer_specific_volcano(cumulative_correlation_results, c("Glioblastoma",
+                                                               "Neuroblastoma"),
+                             output_dir = paste0(figures_path, "donor_age_volcano_cancer_specific.png"))
+
+# individual correlation plots for statistically significant drugs
+plot_significant_drugs(GDSC_age_filtered, significant_drugs_list,
+                       output_dir = paste0(figures_path, "drugs/donor_age_drugs/"))
+
+# DRUG SET ENRICHMENT ANALYSIS (DSEA) - CANCER-SPECIFIC
+# -----------------------------------------------------
+# performs DSEA for each cancer type separately.
+# ranks drugs based on correlation between age at sampling (donor age) and drug response (LN_IC50).
+# identifies enriched drug targets specific to individual cancer types.
+dsea_cancer_specific_results <- run_dsea_cancer_specific(cumulative_correlation_results, GDSC_age_filtered, 
+                                                         output_dir = "results/cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/donor_age_significant_enrichment_dsea_cancerspecific.xlsx")
+
+# plot cancer-type-specific DSEA results
+dsea_cancerspecific_dotplot(dsea_cancer_specific_results, "Cancer-Specific DSEA",
+                            output_dir = paste0(figures_path, "donor_age_dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png"))
 

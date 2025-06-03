@@ -424,7 +424,7 @@ plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumu
 
 
 # volcano plot for selected cancer types 
-plot_cancer_specific_volcano <- function(cumulative_correlation_results, selected_cancer_types) {
+plot_cancer_specific_volcano <- function(cumulative_correlation_results, selected_cancer_types, output_dir) {
   filtered_data <- cumulative_correlation_results %>%
     filter(cancer_type %in% selected_cancer_types)
   
@@ -447,7 +447,7 @@ plot_cancer_specific_volcano <- function(cumulative_correlation_results, selecte
     scale_color_manual(values = cancer_colors)
   
   ggsave(
-    paste0(figures_path, "volcano_cancer_specific.png"),
+    output_dir,
     plot = volcano_plot,
     width = 10,
     height = 10,
@@ -463,7 +463,7 @@ plot_cancer_specific_volcano <- function(cumulative_correlation_results, selecte
 
 # scatter plots for significant drugs found in each cancer type from the ANOVA/correlation analysis.
 # each plot corresponds to a cell line for the analyzed cancer type.
-plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
+plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, output_dir) {
   
   for (cancer_type in names(significant_drugs_list)) {
     
@@ -528,14 +528,16 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
             panel.border = element_rect(color = "black", fill = NA, size = 1.5)
           )
         
-        # save plot
-        ggsave(
-          paste0(figures_path, "drugs/drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".png"),
-          plot = drug_plot,
-          width = 10,
-          height = 8,
-          dpi = 300
-        )
+        # file path
+file_path <- file.path(output_dir, paste0("drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".png"))
+# save 
+ggsave(
+  filename = file_path,
+  plot = drug_plot,
+  width = 10,
+  height = 8,
+  dpi = 300
+)
         
       } else {
         print(paste("No data available for", drug, "in", cancer_type))
@@ -550,7 +552,7 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list) {
 
 # dotplot for cancer specific DSEA results, using clustering from MutExMatSorting and coloring pathways  
 # based on enrichment in young or old predicted groups.  
-dsea_cancerspecific_dotplot <- function(significant_results, title) {   
+dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) {   
   library(MutExMatSorting)   
   library(reshape2)       
   
@@ -623,7 +625,7 @@ dsea_cancerspecific_dotplot <- function(significant_results, title) {
     ) +     
     guides(color = guide_legend(override.aes = list(size = 8)))       
   
-  ggsave(paste0(figures_path, "dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png"), plot = dsea_dotplot, width = 12, height = 8, dpi = 300)       
+  ggsave(output_dir, plot = dsea_dotplot, width = 12, height = 8, dpi = 300)       
   
   return(dsea_dotplot) 
 }
