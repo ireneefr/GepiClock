@@ -8,13 +8,9 @@ library(dplyr)
 
 # Load TCGA samples
 tcga_samples <- TCGA_samples(dir_data = "/Volumes/iorio/Irene/legacy/epiclock_old/data/")
-dim(tcga_samples)
-tcga_samples[1:5,1:5]
-colnames(tcga_samples)
 
 # Get the TCGA project information
 projects <- TCGAbiolinks::getGDCprojects()
-head(projects)
 
 # Merge TCGA samples with project info
 tcga_samples_projects <- merge(tcga_samples, projects, by.x = "project", by.y = "id")
