@@ -2173,8 +2173,11 @@ TCGA_samples <- function(dir_data = "/group/iorio/Irene/legacy/epiclock_old/data
       ifelse(is.null(all_samples), all_samples <- sample_data_sub, all_samples <- rbind(all_samples, sample_data_sub))
     }
   }
-  # only samples with age annotation
-  all_samples_sub <- all_samples[!is.na(all_samples$age_at_index),]
+  # only samples with age annotation and specific sample_type
+  all_samples_sub <- all_samples[!is.na(all_samples$age_at_index) &
+                                   all_samples$sample_type %in% c("Solid Tissue Normal",
+                                                                  "Primary Tumor",
+                                                                  "Primary Blood Derived Cancer - Peripheral Blood"),]
   return(all_samples_sub)
 }
 
