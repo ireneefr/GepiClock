@@ -298,7 +298,7 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
   
   # save plot
   output_path <- output_dir
-  ggsave(output_path, plot = dsea_pan_dotplot, width = 10, height = 8, dpi = 300)
+  ggsave(output_path, plot = dsea_pan_dotplot, width = 10, height = 8, dpi = 600)
   
   # return ordered pathways
   return(ordered_targets)
@@ -348,7 +348,7 @@ plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_t
   
   # save plot
   output_path <- output_dir
-  ggsave(output_path, plot = drugs_involved, width = 12, height = 8, dpi = 300)
+  ggsave(output_path, plot = drugs_involved, width = 12, height = 8, dpi = 600)
   
   return(drugs_involved)
 }
