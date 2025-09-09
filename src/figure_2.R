@@ -110,7 +110,7 @@ ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_t
         strip.background = element_blank(),
         strip.text = element_text(color = "black"),
         axis.text = element_text(color = "black"))
-ggsave("Figures/Figure2A.pdf", dpi = 600, width = 5, height = 8)
+ggsave("Figures/Figure2A.pdf", dpi = 600, width = 5, height = 10)
 
 
 # Missing coefficients plot
