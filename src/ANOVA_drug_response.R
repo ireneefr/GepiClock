@@ -38,6 +38,9 @@ GDSC_age <- generate_merged_drug_dataset(GDSC_combined, cl_samples, threshold = 
 head(GDSC_age)
 print(paste("In the pan-cancer analysis, the number of cell lines after the category selection is", length(unique(GDSC_age$COSMIC_ID))))
 
+# save data
+saveRDS(GDSC_age, "results/cell_lines/cell_lines_drug_sensitivity/cell_lines_per_drugs_pancancer.rds")
+
 # check sample categories
 table(GDSC_age$status)
 table(GDSC_age$tissue_or_cancer_chosen)
@@ -92,6 +95,9 @@ GDSC_age_filtered <- GDSC_age[GDSC_age$cancer_specific == "Included as Cancer Ty
 GDSC_age_filtered$residuals <- NULL
 head(GDSC_age_filtered)
 print(paste("In the cancer type-specific analysis, the number of cell lines after the category selection is", length(unique(GDSC_age_filtered$COSMIC_ID))))
+
+# save data
+saveRDS(GDSC_age_filtered, "results/cell_lines/cell_lines_drug_sensitivity/cell_lines_per_drugs_cancer_specific.rds")
 
 # plot sample categories
 plot_sample_categories_cancer_specific_drug(GDSC_age_filtered)

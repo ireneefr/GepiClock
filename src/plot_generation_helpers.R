@@ -529,7 +529,9 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, ou
           )
         
         # file path
-file_path <- file.path(output_dir, paste0("Figure4C_drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".png"))
+file_path <- file.path(output_dir, paste0("Figure4C_drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".pdf"))
+print(file_path)  # This will print the file path, check if it's correct.
+
 # save 
 ggsave(
   filename = file_path,
