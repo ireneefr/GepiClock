@@ -154,7 +154,7 @@ for (cancer in names(table(significant_enrichments_bp_cancer_spec$cancer_type)))
 }
 
 # dotplot for cancer specific GSEA (top 3 pathways per cancer type)
-gsea_cancerspecific_dotplot(significant_results_bp_df, title = NULL)
+gsea_cancerspecific_dotplot(significant_results_bp_df, title = NULL, output_dir = paste0(figures_path, "gsea_dotplot_cancer_specific_MutExMatSorting.png"))
 
 
 

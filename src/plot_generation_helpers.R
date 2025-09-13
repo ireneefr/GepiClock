@@ -1015,7 +1015,7 @@ plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list
 
 # dotplot for cancer specific GSEA (top 3 pathways per cancer type), using clustering from MutExMatSorting and coloring pathways  
 # based on enrichment in young or old predicted groups.  
-gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title) {
+gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output_dir) {
   
   library(MutExMatSorting)
   library(reshape2)
@@ -1092,7 +1092,7 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title) {
     guides(color = guide_legend(override.aes = list(size = 8)))
   
   # save the plot
-  ggsave(paste0(figures_path, "gsea_dotplot_cancer_specific_MutExMatSorting.png"), plot = gsea_dotplot, width = 14, height = 8, dpi = 300)
+  ggsave(output_dir, plot = gsea_dotplot, width = 14, height = 8, dpi = 600)
   
   return(gsea_dotplot)
 }
