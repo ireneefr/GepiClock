@@ -2,7 +2,7 @@
 ###   FIGURE_4A         ###
 ###########################
 
-# Generation of Figure 4A (4A1 and 4A2) 
+# Generation of Figure 4A (4A1 and 4A2) 
 
 # ============================
 library(tidyverse)

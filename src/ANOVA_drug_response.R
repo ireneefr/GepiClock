@@ -59,6 +59,10 @@ plot_included_tissue_pan_drug(GDSC_age)
 
 # perform anova anova model for drug response
 anova_drug_pancancer_results <- anova_analysis_drugresponse_pan(GDSC_age,"age_prediction")
+
+# save results
+write_xlsx(anova_drug_pancancer_results$correlation_results, "results/cell_lines/cell_lines_drug_sensitivity/anova_pancancer_correlation_results.xlsx")
+
 # plot correlation between predicted age and residual drug sensitivity
 plot_predage_LNIC50_correlation_pan_drug(anova_drug_pancancer_results$correlation_results,
 output_dir = paste0(figures_path, "volcano_ANOVA_drug_pan_cancer.png"))
@@ -71,7 +75,7 @@ plot_anova_LNIC50_residuals(anova_drug_pancancer_results$residuals)
 # between predicted age and residual drug sensitivity (LN_IC50).
 # identifies enriched drug targets associated with age-dependent drug responses.
 dsea_pan_cancer_results <- run_dsea_pan_cancer(anova_drug_pancancer_results$correlation_results, GDSC_age,
-output_dir = "results/cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx")
+output_dir = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"))
 
 # plot drug target enrichment and associated drugs
 ordered_targets <- dsea_pancancer_dotplot(dsea_result = dsea_pan_cancer_results, "Drug Target Enrichment by Predicted Group",
@@ -101,10 +105,14 @@ plot_sample_categories_cancer_specific_drug(GDSC_age_filtered)
 # perform anova anova model for drug response
 cancer_specific_anova_results <- anova_drugresponse_cancer_specific(GDSC_age_filtered, "age_prediction")
 summarize_significant_drugs(cancer_specific_anova_results, 
-output_file = "results/cell_lines/cell_lines_drug_sensitivity/significant_drugs_cancer_types/significant_drugs_anova_results.xlsx"))
+output_file = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/significant_drugs_cancer_types/significant_drugs_anova_results.xlsx"))
 
 # extract and plot cumulative correlation results across cancer types
 cumulative_correlation_results <- cancer_specific_anova_results$cumulative_correlation_results
+
+# save results
+write_xlsx(cumulative_correlation_results, "results/cell_lines/cell_lines_drug_sensitivity/anova_cancer_specific_cumulative_correlation_results.xlsx")
+
 plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug(cumulative_correlation_results,
 output_dir = paste0(figures_path, "volcano_cumulative_drugresponse_cancer_specific.png"))
 
@@ -123,7 +131,7 @@ output_dir = paste0(figures_path, "volcano_cancer_specific.png"))
 
 # individual correlation plots for statistically significant drugs
 plot_significant_drugs(GDSC_age_filtered, significant_drugs_list,
-                       output_dir = paste0(figures_path, "drugs/donor_age_drugs/"))
+                       output_dir = paste0(figures_path, "drugs/"))
 
 # DRUG SET ENRICHMENT ANALYSIS (DSEA) - CANCER-SPECIFIC
 # -----------------------------------------------------
@@ -131,7 +139,7 @@ plot_significant_drugs(GDSC_age_filtered, significant_drugs_list,
 # ranks drugs based on correlation between predicted age and drug response (LN_IC50).
 # identifies enriched drug targets specific to individual cancer types.
 dsea_cancer_specific_results <- run_dsea_cancer_specific(cumulative_correlation_results, GDSC_age_filtered,
-output_dir = "results/cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"))
+output_dir = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"))
 
 # plot cancer-type-specific DSEA results
 dsea_cancerspecific_dotplot(dsea_cancer_specific_results, "Cancer-Specific DSEA", output_dir = paste0(figures_path, "dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png"))

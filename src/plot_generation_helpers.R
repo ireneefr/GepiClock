@@ -414,7 +414,7 @@ plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumu
     ) +
     scale_color_manual(values = cancer_colors)
   
-  ggsave(output_dir, plot = drug_volcano_plot, width = 10, height = 10, dpi = 300)
+  ggsave(output_dir, plot = drug_volcano_plot, width = 10, height = 10, dpi = 600)
   
   return(drug_volcano_plot)
 }
@@ -451,7 +451,7 @@ plot_cancer_specific_volcano <- function(cumulative_correlation_results, selecte
     plot = volcano_plot,
     width = 10,
     height = 10,
-    dpi = 300
+    dpi = 600
   )
   
   return(volcano_plot)
@@ -529,14 +529,14 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, ou
           )
         
         # file path
-file_path <- file.path(output_dir, paste0("drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".png"))
+file_path <- file.path(output_dir, paste0("Figure4C_drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".png"))
 # save 
 ggsave(
   filename = file_path,
   plot = drug_plot,
   width = 10,
   height = 8,
-  dpi = 300
+  dpi = 600
 )
         
       } else {
@@ -625,7 +625,7 @@ dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) 
     ) +     
     guides(color = guide_legend(override.aes = list(size = 8)))       
   
-  ggsave(output_dir, plot = dsea_dotplot, width = 12, height = 8, dpi = 300)       
+  ggsave(output_dir, plot = dsea_dotplot, width = 12, height = 8, dpi = 600)       
   
   return(dsea_dotplot) 
 }
