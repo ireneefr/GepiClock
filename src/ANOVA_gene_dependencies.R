@@ -40,6 +40,9 @@ gene_dep_age <- merged_dep_cls$gene_dep_age
 print(head(gene_dep_age))
 print(paste("In the pan-cancer analysis, the number of cell lines after the category selection is", length(unique(gene_dep_age$BROAD_ID))))
 
+# save data
+saveRDS(gene_dep_age, "results/cell_lines/cell_lines_gene_dependencies/cell_lines_per_genes_pancancer.rds")
+
 # plot sample categories
 depmap_combined <- merged_dep_cls$depmap_combined
 plot_sample_categories_pan_gene(depmap_combined, thresh_number = 10)
@@ -61,6 +64,10 @@ plot_included_tissue_pan_gene(depmap_combined)
 anova_gene_pancancer_results <- anova_analysis_genedep_pan(gene_dep_age)
 # plot correlation between predicted age and residual gene sensitivity
 correlation_results_ANOVA_gene_pan <- anova_gene_pancancer_results$correlation_results
+
+# save results
+write_xlsx(correlation_results_ANOVA_gene_pan, "results/cell_lines/cell_lines_drug_sensitivity/anova_pancancer_correlation_results.xlsx")
+
 plot_predage_gene_effect_correlation_pan_gene(correlation_results_ANOVA_gene_pan)
 
 # GENE SET ENRICHMENT ANALYSIS (GSEA) - PAN-CANCER
@@ -100,6 +107,9 @@ gene_dep_age_filtered$residuals <- NULL
 head(gene_dep_age_filtered)
 print(paste("In the cancer type-specific analysis, the number of cell lines after the category selection is", length(unique(gene_dep_age_filtered$BROAD_ID))))
 
+# save data
+saveRDS(gene_dep_age_filtered, "results/cell_lines/cell_lines_gene_dependencies/cell_lines_per_genes_cancer_specific.rds")
+
 # plot sample categories
 plot_sample_categories_cancer_specific_gene(gene_dep_age_filtered)
 
@@ -118,6 +128,10 @@ summarize_significant_genes(cancer_specific_gene_anova_results)
 
 # extract and plot cumulative correlation results across cancer types
 cumulative_correlation_results_geneDep <- cancer_specific_gene_anova_results$cumulative_correlation_results
+
+# save results
+write_xlsx(cumulative_correlation_results_geneDep, "results/cell_lines/cell_lines_gene_dependencies/anova_cancer_specific_cumulative_correlation_results.xlsx")
+
 plot_predage_geneDep_cumulative_correlation_cancer_specific(cumulative_correlation_results_geneDep)
 
 # identify cancer types with statistically significant age-gene correlation
@@ -131,10 +145,11 @@ significant_genes_list <- extract_significant_genes(cancer_specific_gene_anova_r
 plot_cancer_specific_geneDep_volcano(cumulative_correlation_results_geneDep, 
                                      c("Acute Myeloid Leukemia", 
                                        "Bladder Carcinoma", 
-                                       "Other Solid Cancers"))
+                                       "Other Solid Cancers"),
+                                     output_dir = paste0(figures_path, "volcano_cancer_specific_geneDep.png"))
 
 # individual correlation plots for statistically significant genes
-plot_significant_genes(gene_dep_age_filtered, significant_genes_list)
+plot_significant_genes(gene_dep_age_filtered, significant_genes_list, output_dir = paste0(results_path, "genes/"))
 
 # GENE SET ENRICHMENT ANALYSIS (GSEA) - CANCER-SPECIFIC
 # -----------------------------------------------------

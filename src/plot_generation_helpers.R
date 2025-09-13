@@ -907,7 +907,7 @@ plot_predage_geneDep_cumulative_correlation_cancer_specific <- function(cumulati
 
 
 # volcano plot for selected cancer types
-plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results, selected_cancer_types) {  
+plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results, selected_cancer_types, output_dir) {  
   filtered_data <- cumulative_correlation_results %>%
     filter(cancer_type %in% selected_cancer_types)  
   
@@ -930,8 +930,7 @@ plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results,
     scale_color_manual(values = cancer_colors)  
   
   # save the plot
-  ggsave(paste0(figures_path, "volcano_cancer_specific_geneDep.png"), 
-         plot = volcano_plot, width = 10, height = 10, dpi = 300)
+  ggsave(output_dir, plot = volcano_plot, width = 10, height = 10, dpi = 600)
   
   return(volcano_plot)  
 }
@@ -942,7 +941,7 @@ plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results,
 
 # scatter plots for significant genes found in each cancer type from the anova/correlation analysis.
 # each plot corresponds to a cell line for the analyzed cancer type.
-plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list) {
+plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list, output_dir) {
   
   for (cancer_type in names(significant_genes_list)) {
     
@@ -995,11 +994,11 @@ plot_significant_genes <- function(gene_dep_age_filtered, significant_genes_list
         
         # save 
         ggsave(
-          paste0(figures_path, "genes/gene_", gsub(" ", "_", gene), "_", gsub(" ", "_", cancer_type), ".png"),
+          paste0(output_dir, "Figure5B_gene_", gsub(" ", "_", gene), "_", gsub(" ", "_", cancer_type), ".pdf"),
           plot = gene_plot,
           width = 10,
           height = 8,
-          dpi = 300
+          dpi = 600
         )
         
       } else {
