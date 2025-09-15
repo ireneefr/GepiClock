@@ -11,12 +11,28 @@ library(BSgenome.Hsapiens.UCSC.hg19)
 library(ggbio)
 library(tidyr)
 library(dplyr)
+dir_metadata <- "metadata/"
 
 # Load data
+load(paste0(dir_metadata, "HorvathS2013.rda"))
+horvath <- coefs
+load(paste0(dir_metadata, "HannumG2013.rda"))
+hannum <- coefs
+load(paste0(dir_metadata, "HorvathS2018.rda"))
+horvath2 <- coefs
+load(paste0(dir_metadata, "LevineM2018.rda"))
+levine <- coefs
 model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
 model_coefs <- subset(model_coefs, s0 != 0) #4863  2
+cpgs_shared <- CpGshared()
 ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
-ann_model_cpgs <- merge(ann, model_coefs, by.x = "row.names", by.y = "X")
+ann_horvath <- as.data.frame(merge(ann, horvath, by.x = "row.names", by.y = "Probe"))
+ann_hannum <- as.data.frame(merge(ann, hannum, by.x = "row.names", by.y = "Probe"))
+ann_horvath2 <- as.data.frame(merge(ann, horvath2, by.x = "row.names", by.y = "Probe"))
+ann_levine <- as.data.frame(merge(ann, levine, by.x = "row.names", by.y = "Probe"))
+ann_model_cpgs <- as.data.frame(merge(ann, model_coefs, by.x = "row.names", by.y = "X"))
+ann_cpgs_shared <- as.data.frame(ann[rownames(ann) %in% cpgs_shared,])
+
 
 # CpG models in karyogram
 gr_model <- GRanges(seqnames = ann_model_cpgs$chr, 
@@ -76,29 +92,203 @@ mcols(genomic_windows) <- cbind(mcols(genomic_windows), df_test)
 genomic_windows$sig <- ifelse(genomic_windows$padj<=0.05, 10, NA)
 genomic_windows$ypos <- 1
 
-pdf("Figures/Figure3A.pdf", width = 8, height = 5)
-ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
-  scale_fill_gradient(low = "white", high = "red", na.value = "white") +
-  labs(fill = 'CpGs/Mb') +
-  theme(panel.background = element_blank(),
-        strip.background = element_blank(),
-        axis.text = element_text(color = "black"),
-        text = element_text(size = 15),
-        legend.position = c(0.9, 0.5),
-        strip.placement.y = "outside",
-        strip.text.y.left = element_text(angle = 0, hjust = 1, vjust = 0.5)) +
-  facet_grid(rows = vars(seqnames), switch = "y")
-dev.off()
-
-# png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_karyogram_hypergeometric.png",
-#     width = 10, height = 6, units = 'in', res = 600)
+# pdf("Figures/Figure3A.pdf", width = 8, height = 5)
 # ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
 #   scale_fill_gradient(low = "white", high = "red", na.value = "white") +
-#   layout_karyogram(data = genomic_windows, aes(x = (start+end)/2, y = log_padj), geom = "line", color = "black", size = 0.4) +
-#   layout_karyogram(data = genomic_windows[genomic_windows$padj<=0.05,], aes(x = (start+end)/2, y = sig), geom = "point", shape = 8, color = "black", size = 2, stroke = 1) +
 #   labs(fill = 'CpGs/Mb') +
 #   theme(panel.background = element_blank(),
 #         strip.background = element_blank(),
-#         strip.text = element_text(size = 10, face = "bold"),
-#         panel.spacing.y = unit(0, "lines"))
+#         axis.text = element_text(color = "black"),
+#         text = element_text(size = 15),
+#         legend.position = c(0.9, 0.5),
+#         strip.placement.y = "outside",
+#         strip.text.y.left = element_text(angle = 0, hjust = 1, vjust = 0.5)) +
+#   facet_grid(rows = vars(seqnames), switch = "y")
 # dev.off()
+
+pdf("Figures/Figure3A.pdf", width = 10, height = 7)
+ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
+  scale_fill_gradient(low = "white", high = "red", na.value = "white",
+                      guide = guide_colorbar(frame.colour = "black",
+                                             frame.linewidth = 0.2,
+                                             ticks.colour = "black")) +
+  layout_karyogram(data = genomic_windows, aes(x = (start+end)/2, y = log_padj), geom = "line", color = "black", size = 0.2) +
+  layout_karyogram(data = genomic_windows[genomic_windows$padj<=0.05,], aes(x = (start+end)/2, y = sig), geom = "point", shape = 7, color = "black", size = 0.25, stroke = 0.5) +
+  labs(fill = 'CpGs/Mb') +
+  theme(panel.background = element_blank(),
+        strip.background = element_blank(),
+        strip.text = element_text(size = 10, face = "bold"),
+        panel.spacing.y = unit(0, "lines"))
+dev.off()
+
+
+# CpGs per chromosome
+df_chr <- data.frame(chr = paste0("chr", 1:22),
+                     total_chr = sapply(paste0("chr", 1:22), function(x) length(gr_all[seqnames(gr_all) == x])),
+                     model_chr = sapply(paste0("chr", 1:22), function(x) length(gr_model[seqnames(gr_model) == x])))
+
+# Get percentages
+total_all_cpgs <- sum(df_chr$total_chr)
+total_model_cpgs <- sum(df_chr$model_chr)
+df_chr <- df_chr %>%
+  mutate(perc_in_chr = (model_chr / total_chr) * 100,        # % model CpG in chr
+         perc_in_model = (model_chr / total_model_cpgs) * 100) # % chr CpG in model
+
+# Ensure chromosomes are factors in the correct order
+df_chr$chr <- factor(df_chr$chr, levels = paste0("chr", 1:22))
+
+# Heatmap for model CpG in chr (%)
+pdf("Figures/Figure3A_1.pdf", width = 2, height = 8)
+ggplot(df_chr, aes(x = "%CpGs in chr", y = chr, fill = perc_in_chr)) +
+  geom_tile(color = "black", size = 0.2, width = 0.75) +
+  geom_text(aes(label = sprintf("%.2f", perc_in_chr)), color = "black", size = 4) +
+  scale_fill_gradient(low = "white", high = "slateblue1", name = "Model CpGs\nin chr (%)",
+                      guide = guide_colorbar(
+                        title.position = "bottom",   # title position: "top", "bottom", "left", "right"
+                        title.hjust = 0.5, # center the title relative to bar
+                        frame.colour = "black",
+                        frame.linewidth = 0.2,
+                        ticks.colour = "black")) +
+  scale_y_discrete(limits = rev(levels(df_chr$chr))) +
+  theme_void() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_text(size = 14))
+dev.off()
+
+# Heatmap for chr CpG in model (%)
+pdf("Figures/Figure3A_2.pdf", width = 2, height = 8)
+ggplot(df_chr, aes(x = "%CpGs in model", y = chr, fill = perc_in_model)) +
+  geom_tile(color = "black", size = 0.2, width = 0.75) +
+  geom_text(aes(label = sprintf("%.2f", perc_in_model)), color = "black", size = 4) +
+  scale_fill_gradient(low = "white", high = "aquamarine3", name = "Chr CpGs\nin model (%)",
+                      guide = guide_colorbar(
+                        title.position = "bottom",   # title position: "top", "bottom", "left", "right"
+                        title.hjust = 0.5, # center the title relative to bar
+                        frame.colour = "black",
+                        frame.linewidth = 0.2,
+                        ticks.colour = "black")) +
+  scale_y_discrete(limits = rev(levels(df_chr$chr))) +
+  theme_void() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_text(size = 14))
+dev.off()
+
+
+
+
+
+
+
+# CpGs outside gene region
+# Helper function to calculate gene region statistics
+get_gene_region_stats <- function(data, source_name) {
+  data %>%
+    mutate(group = ifelse(UCSC_RefGene_Name == "", "No gene", "Gene")) %>%
+    group_by(group) %>%
+    summarize(n = n(), .groups = 'drop') %>%
+    mutate(percentage = n / sum(n) * 100, source = source_name)
+}
+
+# Calculate statistics for both datasets
+gene_region_horvath <- get_gene_region_stats(ann_horvath, "Horvath\n2013")
+gene_region_hannum <- get_gene_region_stats(ann_hannum, "Hannum")
+gene_region_horvath2 <- get_gene_region_stats(ann_horvath2, "Horvath\n2018")
+gene_region_levine <- get_gene_region_stats(ann_levine, "Levine")
+gene_region <- get_gene_region_stats(ann_model_cpgs, "Rebollo")
+gene_region_shared <- get_gene_region_stats(ann_cpgs_shared, "Illumina\narray")
+
+# # Combine with Illumina array
+# combined_data <- bind_rows(gene_region,
+#                            gene_region_shared)
+# 
+# ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+#   geom_bar(stat = "identity") +
+#   scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
+#   xlab("") + ylab("%CpGs") +
+#   coord_flip() +
+#   theme_minimal(base_size = 20) +
+#   theme(axis.text = element_text(color = "black"),
+#         legend.position = "top",
+#         panel.grid.major.y = element_blank(),
+#         panel.grid.minor.x = element_blank())
+# ggsave("Figures/Figure3B.pdf")
+
+# Combine with all clocks
+combined_data <- bind_rows(gene_region_horvath,
+                           gene_region_hannum,
+                           gene_region_horvath2,
+                           gene_region_levine,
+                           gene_region,
+                           gene_region_shared)
+combined_data$source <- factor(combined_data$source, 
+                               levels = c("Illumina\narray", "Rebollo", "Levine",
+                                          "Horvath\n2018", "Horvath\n2013", "Hannum"))
+pdf("Figures/Figure3B.pdf", width = 8, height = 5)
+ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+dev.off()
+
+
+# Gene group representation
+# Helper function to calculate gene region statistics
+get_gene_group_stats <- function(data, source_name) {
+  data %>%
+    mutate(group = strsplit(as.character(UCSC_RefGene_Group), ";")) %>%
+    unnest(group) %>%
+    group_by(group) %>%
+    summarize(n = n(), .groups = 'drop') %>%
+    mutate(percentage = n / sum(n) * 100, source = source_name)
+}
+
+# Calculate statistics for both datasets
+gene_group_horvath <- get_gene_group_stats(ann_horvath, "Horvath\n2013")
+gene_group_hannum <- get_gene_group_stats(ann_hannum, "Hannum")
+gene_group_horvath2 <- get_gene_group_stats(ann_horvath2, "Horvath\n2018")
+gene_group_levine <- get_gene_group_stats(ann_levine, "Levine")
+gene_group <- get_gene_group_stats(ann_model_cpgs, "Rebollo")
+gene_group_shared <- get_gene_group_stats(ann_cpgs_shared, "Illumina\narray")
+
+# Combine with all clocks
+combined_data <- bind_rows(gene_group_horvath,
+                           gene_group_hannum,
+                           gene_group_horvath2,
+                           gene_group_levine,
+                           gene_group,
+                           gene_group_shared)
+combined_data$source <- factor(combined_data$source, 
+                               levels = c("Illumina\narray", "Rebollo", "Levine",
+                                          "Horvath\n2018", "Horvath\n2013", "Hannum"))
+gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
+combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
+combined_data_sorted <- combined_data %>%
+  arrange(group)
+pdf("Figures/Figure3C.pdf", width = 8, height = 5.4)
+ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = RColorBrewer::brewer.pal(length(gene_order), "Set2"),
+                    breaks = gene_order,
+                    name = "") +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+dev.off()
