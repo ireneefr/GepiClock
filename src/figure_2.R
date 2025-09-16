@@ -1,164 +1,290 @@
 ####################
-###   Figure 2   ###
+###   Figure 3   ###
 ####################
 
+
 source("src/utils.R")
-library(caret)
+library(minfi)
+library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+library(GenomicRanges)
+library(BSgenome.Hsapiens.UCSC.hg19)
+library(ggbio)
 library(tidyr)
 library(dplyr)
-library(ggplot2)
-library(ggpubr)
+dir_metadata <- "metadata/"
 
 # Load data
-tcga_samples <- TCGA_samples(dir_data = "/Volumes/iorio/Irene/legacy/epiclock_old/data/")
-# Create categorical age variable
-tcga_samples$age_cat <- cut(tcga_samples$age_at_index, 
-                            breaks = seq(0, max(tcga_samples$age_at_index, na.rm = TRUE) + 1, by = 10), 
-                            right = FALSE, 
-                            labels = paste0(seq(0, max(tcga_samples$age_at_index, na.rm = TRUE) - 1, by = 10),
-                                            "-", seq(9, max(tcga_samples$age_at_index, na.rm = TRUE), by = 10)))
-# Create variable combining project and age 
-tcga_samples$project_age <- paste(tcga_samples$project, tcga_samples$age_cat, sep = "_")
-# Subset of data to plot
-tcga_samples_sub <- tcga_samples[tcga_samples$sample_type %in% c("Solid Tissue Normal", "Primary Tumor", "Primary Blood Derived Cancer - Peripheral Blood"), ]
+load(paste0(dir_metadata, "HorvathS2013.rda"))
+horvath <- coefs
+load(paste0(dir_metadata, "HannumG2013.rda"))
+hannum <- coefs
+load(paste0(dir_metadata, "HorvathS2018.rda"))
+horvath2 <- coefs
+load(paste0(dir_metadata, "LevineM2018.rda"))
+levine <- coefs
+model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
+model_coefs <- subset(model_coefs, s0 != 0) #4863  2
+cpgs_shared <- CpGshared()
+ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+ann_horvath <- as.data.frame(merge(ann, horvath, by.x = "row.names", by.y = "Probe"))
+ann_hannum <- as.data.frame(merge(ann, hannum, by.x = "row.names", by.y = "Probe"))
+ann_horvath2 <- as.data.frame(merge(ann, horvath2, by.x = "row.names", by.y = "Probe"))
+ann_levine <- as.data.frame(merge(ann, levine, by.x = "row.names", by.y = "Probe"))
+ann_model_cpgs <- as.data.frame(merge(ann, model_coefs, by.x = "row.names", by.y = "X"))
+ann_cpgs_shared <- as.data.frame(ann[rownames(ann) %in% cpgs_shared,])
 
-# Divide samples
-samples_normal <- tcga_samples[tcga_samples$sample_type == "Solid Tissue Normal",]
-samples_tumor <- tcga_samples[tcga_samples$sample_type %in% c("Primary Tumor", "Primary Blood Derived Cancer - Peripheral Blood"), ]
-samples_model <- samples_tumor[!(samples_tumor$patient %in% c(samples_normal$patient, samples_tumor[duplicated(samples_tumor$patient), "patient"])),]
-samples_nomodel <- samples_tumor[!(samples_tumor$patient %in% samples_model$patient),]
 
-# Load predictions
-pred_RebolloI2025 <-  read.csv("results/TCGA/predictions/pred_RebolloI2025.csv", col.names = c("sample", "RebolloI2025"))
-pred_HorvathS2013 <- read.csv("results/TCGA/predictions/pred_HorvathS2013.csv", col.names = c("x", "sample", "HorvathS2013"))[,2:3]
-pred_HannumG2013 <- read.csv("results/TCGA/predictions/pred_HannumG2013.csv", col.names = c("x", "sample", "HannumG2013"))[,2:3]
-pred_HorvathS2018 <- read.csv("results/TCGA/predictions/pred_HorvathS2018.csv", col.names = c("x", "sample", "HorvathS2018"))[,2:3]
-pred_LevineM2018 <- read.csv("results/TCGA/predictions/pred_LevineM2018.csv", col.names = c("x", "sample", "LevineM2018"))[,2:3]
+# CpG models in karyogram
+gr_model <- GRanges(seqnames = ann_model_cpgs$chr, 
+                    ranges = IRanges(start = ann_model_cpgs$pos, end = ann_model_cpgs$pos),
+                    coef = ann_model_cpgs$s0)
+seqlevels(gr_model, pruning.mode = "coarse") <- paste0("chr", 1:22)
+seqinfo(gr_model) <- seqinfo(BSgenome.Hsapiens.UCSC.hg19)[seqlevels(gr_model)]
 
-# Train & Test split
-set.seed(2025)
-train_rows <- createDataPartition(samples_model[,"project_age"], p=0.8, list = FALSE)
-train <- samples_model[train_rows, "barcode"]
-test <- samples_model[-train_rows, "barcode"]
+gr_all <- GRanges(seqnames = ann$chr, 
+                  ranges = IRanges(start = ann$pos, end = ann$pos))
+seqlevels(gr_all, pruning.mode = "coarse") <- paste0("chr", 1:22)
+seqinfo(gr_all) <- seqinfo(BSgenome.Hsapiens.UCSC.hg19)[seqlevels(gr_all)]
 
-# Combine information
-tcga_samples_sub[tcga_samples_sub$barcode %in% test, "data_set"] <- "Primary Tumour (Test)"
-tcga_samples_sub[tcga_samples_sub$barcode %in% samples_nomodel$barcode, "data_set"] <- "Primary Tumour (Others)"
-tcga_samples_sub[tcga_samples_sub$barcode %in% samples_normal$barcode, "data_set"] <- "Normal Tissue"
-tcga_samples_sub <- tcga_samples_sub[!is.na(tcga_samples_sub$data_set),]
-tcga_samples_sub$sample_type <- factor(tcga_samples_sub$data_set, levels = c("Normal Tissue", "Primary Tumour (Test)", "Primary Tumour (Others)"))
+# Create windows 1Mb
+window_size <- 1e6
+genomic_windows <- tileGenome(seqinfo(gr_model), tilewidth = window_size, cut.last.tile.in.chrom = TRUE) #try gr_all
 
-tcga_samples_sub <- merge(tcga_samples_sub, pred_RebolloI2025, by.x = "barcode", by.y = "sample")
-tcga_samples_sub <- merge(tcga_samples_sub, pred_HorvathS2013, by.x = "barcode", by.y = "sample")
-tcga_samples_sub <- merge(tcga_samples_sub, pred_HannumG2013, by.x = "barcode", by.y = "sample")
-tcga_samples_sub <- merge(tcga_samples_sub, pred_HorvathS2018, by.x = "barcode", by.y = "sample")
-tcga_samples_sub <- merge(tcga_samples_sub, pred_LevineM2018, by.x = "barcode", by.y = "sample")
-tcga_samples_sub_plot <- tcga_samples_sub %>% 
-  pivot_longer(c(HorvathS2013, HannumG2013, HorvathS2018, LevineM2018, RebolloI2025), names_to = "clock", values_to = "pred_age")
-color_type <- c("Primary Tumour (Test)" = "steelblue1",
-                "Primary Tumour (Others)" = "steelblue3",
-                "Normal Tissue" = "chartreuse3")
+# Mean coefficient by window
+overlaps <- findOverlaps(genomic_windows, gr_model, select = "all")
+mean_coef_per_window <- sapply(split(gr_model$coef[subjectHits(overlaps)], queryHits(overlaps)), mean, na.rm = TRUE)
+genomic_windows$mean_coef <- NA  # Initialize with NA
+genomic_windows$mean_coef[as.numeric(names(mean_coef_per_window))] <- mean_coef_per_window
 
-# Obtain correlations
-correlation_by_group <- tcga_samples_sub_plot %>%
-  group_by(Sample_type = sample_type, Clock = clock) %>%
-  summarise(N = n(),
-            R = cor.test(age_at_index, pred_age)$estimate,
-            Pval = cor.test(age_at_index, pred_age)$p.value)
+# Compute hypergeometric test by chromosome
+results_list <- list()
+for(chr in unique(seqnames(genomic_windows))){
+  genomic_windows_chr <- genomic_windows[seqnames(genomic_windows) == chr,]
+  genomic_windows_chr$CpG_model <- countOverlaps(genomic_windows_chr, gr_model)
+  genomic_windows_chr$CpG_chr <- countOverlaps(genomic_windows_chr, gr_all)
+  
+  # Total number of CpGs in the 450K array
+  M <- length(gr_all[seqnames(gr_all) == chr,])
+  # Total number of CpGs in the model
+  N <- length(gr_model[seqnames(gr_model) == chr,])
+  
+  pval <- mapply(function(x, K) {
+    phyper(q = x - 1,  # successes in sample minus 1 (P(X >= x))
+           m = N,      # total successes in population (model CpGs)
+           n = M - N,  # total failures in population (non-model CpGs)
+           k = K,      # sample size (CpGs in window)
+           lower.tail = FALSE) # P-value for enrichment
+  }, genomic_windows_chr$CpG_model, genomic_windows_chr$CpG_chr)
+  padj <- p.adjust(pval, method = "BH")
+  log_padj <- log2(padj)
+  
+  # Store results as a data frame
+  results_list[[chr]] <- data.frame(CpG_model = genomic_windows_chr$CpG_model,
+                                    CpG_chr = genomic_windows_chr$CpG_chr,
+                                    pval = pval,
+                                    padj = padj,
+                                    log_padj = log_padj)
+}
+df_test <- do.call(rbind, results_list)
+mcols(genomic_windows) <- cbind(mcols(genomic_windows), df_test)
 
-# Barplot
-ggplot(correlation_by_group, aes(x = Clock, y = R, fill = Sample_type)) +
-  geom_col(position = "dodge", width = 0.75) +
-  scale_fill_manual(name = "", values = color_type,
-                    labels = c("Normal", "Tumour (test)", "Tumour (other)")) +
-  xlab("") + ylab("Pearson Correlation (R)") + ylim(c(0,1)) +
-  scale_x_discrete(limits=rev, labels = c("HannumG2013" = "Hannum (2013)",
-                                          "HorvathS2013" = "Horvath (2013)",
-                                          "HorvathS2018" = "Horvath (2018)",
-                                          "LevineM2018" = "Levine (2018)",
-                                          "RebolloI2025" = "Rebollo")) +
-  theme_bw(base_size = 20) + 
-  theme(axis.text = element_text(color = "black"),
-        legend.position = "bottom") +
-  coord_flip()
-ggsave("Figures/Figure2B.pdf", dpi = 600, width = 8, height = 6)
+# Plot results
+genomic_windows$sig <- ifelse(genomic_windows$padj<=0.05, 10, NA)
+genomic_windows$ypos <- 1
 
-# Scatterplot
-freq_sample_type <- as.data.frame(table(tcga_samples_sub$sample_type))
-colnames(freq_sample_type) <- c("Sample_type", "Freq")
-tcga_samples_sub$Sample_type <- tcga_samples_sub$sample_type
-ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_type)) +
-  geom_point(color = "black", shape = 21, alpha = 0.6, size = 2) +
-  geom_smooth(method = "lm", color = "black", linewidth = 0.75, aes(fill = NULL), show.legend = FALSE) +
-  scale_fill_manual(name = "Data subset", values = color_type) +
-  geom_text(data = freq_sample_type,
-            aes(x = 5, y = 97, label = paste("N =", Freq)),  
-            inherit.aes = FALSE, size = 4, hjust = 0) +
-  geom_text(data = correlation_by_group[correlation_by_group$Clock == "RebolloI2025",],
-            aes(x = 5, y = 90, label = paste("R =", round(R, 3))),  
-            inherit.aes = FALSE, size = 4, hjust = 0) +
-  geom_text(data = correlation_by_group[correlation_by_group$Clock == "RebolloI2025",],
-            aes(x = 5, y = 83, label = paste("Pval =", formatC(Pval, format = "e", digits = 0))),  
-            inherit.aes = FALSE, size = 4, hjust = 0) +
-  facet_wrap(.~Sample_type, ncol = 1, labeller = as_labeller(c("Normal Tissue" = "Normal",
-                                                               "Primary Tumour (Test)" = "Tumour (test)",
-                                                               "Primary Tumour (Others)" = "Tumour (other)"))) +
-  xlab("Chronological Age") + ylab("Predicted Age") +
-  xlim(c(0, 100)) + ylim(c(0, 100)) +
-  theme_bw(base_size = 20) +
-  theme(legend.position = "none",
+# pdf("Figures/Figure3A.pdf", width = 8, height = 5)
+# ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
+#   scale_fill_gradient(low = "white", high = "red", na.value = "white") +
+#   labs(fill = 'CpGs/Mb') +
+#   theme(panel.background = element_blank(),
+#         strip.background = element_blank(),
+#         axis.text = element_text(color = "black"),
+#         text = element_text(size = 15),
+#         legend.position = c(0.9, 0.5),
+#         strip.placement.y = "outside",
+#         strip.text.y.left = element_text(angle = 0, hjust = 1, vjust = 0.5)) +
+#   facet_grid(rows = vars(seqnames), switch = "y")
+# dev.off()
+
+pdf("Figures/Figure3A.pdf", width = 10, height = 7)
+ggbio::autoplot(genomic_windows, aes(fill = CpG_model), layout = "karyogram") +
+  scale_fill_gradient(low = "white", high = "red", na.value = "white",
+                      guide = guide_colorbar(frame.colour = "black",
+                                             frame.linewidth = 0.2,
+                                             ticks.colour = "black")) +
+  layout_karyogram(data = genomic_windows, aes(x = (start+end)/2, y = log_padj), geom = "line", color = "black", size = 0.2) +
+  layout_karyogram(data = genomic_windows[genomic_windows$padj<=0.05,], aes(x = (start+end)/2, y = sig), geom = "point", shape = 7, color = "black", size = 0.25, stroke = 0.5) +
+  labs(fill = 'CpGs/Mb') +
+  theme(panel.background = element_blank(),
         strip.background = element_blank(),
-        strip.text = element_text(color = "black"),
-        axis.text = element_text(color = "black"))
-ggsave("Figures/Figure2A.pdf", dpi = 600, width = 5, height = 10)
+        strip.text = element_text(size = 10, face = "bold"),
+        panel.spacing.y = unit(0, "lines"))
+dev.off()
 
 
-# Missing coefficients plot
-# Load data
-res_test <- read.csv("/Volumes/iorio/Irene/epiclock_dev/results/TCGA/model/test_missing.csv")
-res_normal <- read.csv("/Volumes/iorio/Irene/epiclock_dev/results/TCGA/model/normal_missing.csv")
-res_tumor <- read.csv("/Volumes/iorio/Irene/epiclock_dev/results/TCGA/model/tumor_missing.csv")
+# CpGs per chromosome
+df_chr <- data.frame(chr = paste0("chr", 1:22),
+                     total_chr = sapply(paste0("chr", 1:22), function(x) length(gr_all[seqnames(gr_all) == x])),
+                     model_chr = sapply(paste0("chr", 1:22), function(x) length(gr_model[seqnames(gr_model) == x])))
 
-# Summarize information
-res_test_summary <- as.data.frame(res_test) %>%
-  group_by(Perc_missing) %>%
-  summarise(
-    sd = as.numeric(sd(R, na.rm = TRUE)),
-    mean = as.numeric(mean(R)),
-    mean_mae = as.numeric(mean(MAE)),
-    data = "Primary Tumour (Test)"
-  )
-res_normal_summary <- as.data.frame(res_normal) %>%
-  group_by(Perc_missing) %>%
-  summarise(
-    sd = as.numeric(sd(R, na.rm = TRUE)),
-    mean = as.numeric(mean(R)),
-    mean_mae = as.numeric(mean(MAE)),
-    data = "Normal Tissue"
-  )
-res_tumor_summary <- as.data.frame(res_tumor) %>%
-  group_by(Perc_missing) %>%
-  summarise(
-    sd = as.numeric(sd(R, na.rm = TRUE)),
-    mean = as.numeric(mean(R)),
-    mean_mae = as.numeric(mean(MAE)),
-    data = "Primary Tumour (Others)"
-  )
-res <- rbind(res_test_summary, res_normal_summary, res_tumor_summary)
+# Get percentages
+total_all_cpgs <- sum(df_chr$total_chr)
+total_model_cpgs <- sum(df_chr$model_chr)
+df_chr <- df_chr %>%
+  mutate(perc_in_chr = (model_chr / total_chr) * 100, # % model CpG in chr
+         perc_in_model = (model_chr / total_model_cpgs) * 100, # % chr CpG in model
+         perc_in_genome = (total_chr / total_all_cpgs) * 100) # % chr CpG in genome
 
-# Plot
-color_type <- c("Primary Tumour (Test)" = "steelblue1",
-                "Primary Tumour (Others)" = "steelblue3",
-                "Normal Tissue" = "chartreuse3")
-ggplot(res, aes(x = Perc_missing, y = mean,
-                ymin = mean-sd, ymax = mean+sd, fill = data, color = data)) +
-  geom_line(linewidth = 1) +
-  geom_errorbar(width = 0.02) +
-  geom_point(shape=21, color="black", size=3) +
-  scale_fill_manual(values = color_type, name = "Data subset") +
-  scale_color_manual(values = color_type, name = "Data subset") +
-  xlab("Missing Coefficients (%)") + ylab("Pearson Correlation (R)") +
-  theme_bw(base_size = 20) +
-  theme(legend.position = "none",
-        axis.text = element_text(color = "black"))
-ggsave("Figures/Figure2C.pdf", dpi = 600, width = 8, height = 6)
+# Ensure chromosomes are factors in the correct order
+df_chr$chr <- factor(df_chr$chr, levels = paste0("chr", 1:22))
+
+# Heatmap for model CpG in chr (%)
+pdf("Figures/Figure3A_1.pdf", width = 2, height = 8)
+ggplot(df_chr, aes(x = "%CpGs in chr", y = chr, fill = perc_in_chr)) +
+  geom_tile(color = "black", size = 0.2, width = 0.75) +
+  geom_text(aes(label = sprintf("%.2f", perc_in_chr)), color = "black", size = 4) +
+  scale_fill_gradient(low = "white", high = "slateblue1", name = "Model CpGs\nin chr (%)",
+                      guide = guide_colorbar(
+                        title.position = "bottom",   # title position: "top", "bottom", "left", "right"
+                        title.hjust = 0.5, # center the title relative to bar
+                        frame.colour = "black",
+                        frame.linewidth = 0.2,
+                        ticks.colour = "black")) +
+  scale_y_discrete(limits = rev(levels(df_chr$chr))) +
+  theme_void() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_text(size = 14))
+dev.off()
+
+# Heatmap for chr CpG in model (%)
+pdf("Figures/Figure3A_2.pdf", width = 2, height = 8)
+ggplot(df_chr, aes(x = "%CpGs in model", y = chr, fill = perc_in_model)) +
+  geom_tile(color = "black", size = 0.2, width = 0.75) +
+  geom_text(aes(label = sprintf("%.2f", perc_in_model)), color = "black", size = 4) +
+  scale_fill_gradient(low = "white", high = "aquamarine3", name = "Chr CpGs\nin model (%)",
+                      guide = guide_colorbar(
+                        title.position = "bottom",   # title position: "top", "bottom", "left", "right"
+                        title.hjust = 0.5, # center the title relative to bar
+                        frame.colour = "black",
+                        frame.linewidth = 0.2,
+                        ticks.colour = "black")) +
+  scale_y_discrete(limits = rev(levels(df_chr$chr))) +
+  theme_void() +
+  theme(axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        legend.position = "bottom",
+        legend.title = element_text(size = 14))
+dev.off()
+
+
+# CpGs outside gene region
+# Helper function to calculate gene region statistics
+get_gene_region_stats <- function(data, source_name) {
+  data %>%
+    mutate(group = ifelse(UCSC_RefGene_Name == "", "No gene", "Gene")) %>%
+    group_by(group) %>%
+    summarize(n = n(), .groups = 'drop') %>%
+    mutate(percentage = n / sum(n) * 100, source = source_name)
+}
+
+# Calculate statistics for both datasets
+gene_region_horvath <- get_gene_region_stats(ann_horvath, "Horvath\n2013")
+gene_region_hannum <- get_gene_region_stats(ann_hannum, "Hannum")
+gene_region_horvath2 <- get_gene_region_stats(ann_horvath2, "Horvath\n2018")
+gene_region_levine <- get_gene_region_stats(ann_levine, "Levine")
+gene_region <- get_gene_region_stats(ann_model_cpgs, "Rebollo")
+gene_region_shared <- get_gene_region_stats(ann_cpgs_shared, "Illumina\narray")
+
+# # Combine with Illumina array
+# combined_data <- bind_rows(gene_region,
+#                            gene_region_shared)
+# 
+# ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+#   geom_bar(stat = "identity") +
+#   scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
+#   xlab("") + ylab("%CpGs") +
+#   coord_flip() +
+#   theme_minimal(base_size = 20) +
+#   theme(axis.text = element_text(color = "black"),
+#         legend.position = "top",
+#         panel.grid.major.y = element_blank(),
+#         panel.grid.minor.x = element_blank())
+# ggsave("Figures/Figure3B.pdf")
+
+# Combine with all clocks
+combined_data <- bind_rows(gene_region_horvath,
+                           gene_region_hannum,
+                           gene_region_horvath2,
+                           gene_region_levine,
+                           gene_region,
+                           gene_region_shared)
+combined_data$source <- factor(combined_data$source, 
+                               levels = c("Illumina\narray", "Rebollo", "Levine",
+                                          "Horvath\n2018", "Horvath\n2013", "Hannum"))
+pdf("Figures/Figure3B.pdf", width = 8, height = 5)
+ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+dev.off()
+
+
+# Gene group representation
+# Helper function to calculate gene region statistics
+get_gene_group_stats <- function(data, source_name) {
+  data %>%
+    mutate(group = strsplit(as.character(UCSC_RefGene_Group), ";")) %>%
+    unnest(group) %>%
+    group_by(group) %>%
+    summarize(n = n(), .groups = 'drop') %>%
+    mutate(percentage = n / sum(n) * 100, source = source_name)
+}
+
+# Calculate statistics for both datasets
+gene_group_horvath <- get_gene_group_stats(ann_horvath, "Horvath\n2013")
+gene_group_hannum <- get_gene_group_stats(ann_hannum, "Hannum")
+gene_group_horvath2 <- get_gene_group_stats(ann_horvath2, "Horvath\n2018")
+gene_group_levine <- get_gene_group_stats(ann_levine, "Levine")
+gene_group <- get_gene_group_stats(ann_model_cpgs, "Rebollo")
+gene_group_shared <- get_gene_group_stats(ann_cpgs_shared, "Illumina\narray")
+
+# Combine with all clocks
+combined_data <- bind_rows(gene_group_horvath,
+                           gene_group_hannum,
+                           gene_group_horvath2,
+                           gene_group_levine,
+                           gene_group,
+                           gene_group_shared)
+combined_data$source <- factor(combined_data$source, 
+                               levels = c("Illumina\narray", "Rebollo", "Levine",
+                                          "Horvath\n2018", "Horvath\n2013", "Hannum"))
+gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
+combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
+combined_data_sorted <- combined_data %>%
+  arrange(group)
+pdf("Figures/Figure3C.pdf", width = 8, height = 5.4)
+ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
+  geom_bar(stat = "identity") +
+  scale_fill_manual(values = RColorBrewer::brewer.pal(length(gene_order), "Set2"),
+                    breaks = gene_order,
+                    name = "") +
+  xlab("") + ylab("%CpGs") +
+  coord_flip() +
+  theme_minimal(base_size = 20) +
+  theme(axis.text = element_text(color = "black"),
+        legend.position = "top",
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor.x = element_blank())
+dev.off()
