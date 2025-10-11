@@ -100,7 +100,7 @@ print(paste("In the cancer type-specific analysis, the number of cell lines afte
 saveRDS(GDSC_age_filtered, "results/cell_lines/cell_lines_drug_sensitivity/cell_lines_per_drugs_cancer_specific.rds")
 
 # plot sample categories
-plot_sample_categories_cancer_specific_drug(GDSC_age_filtered)
+plot_sample_categories_cancer_specific_drug(GDSC_age_filtered, output_dir <- paste0(figures_path, "cancer_selection_drug_canc_spec.png"))
 
 # ANOVA MODEL FOR DRUG RESPONSE (Cancer-Specific)
 # -----------------------------------------------

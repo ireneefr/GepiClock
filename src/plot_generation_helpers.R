@@ -356,7 +356,7 @@ plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_t
 
 
 # bar plot showing the number of unique cancer-specific cell lines, grouped by MSI status - ANOVA DRUG CANCER SPECIFIC
-plot_sample_categories_cancer_specific_drug <- function(GDSC_age_included) {
+plot_sample_categories_cancer_specific_drug <- function(GDSC_age_included, output_dir) {
   # unique cell lines
   GDSC_age_unique_included <- GDSC_age_included[!duplicated(GDSC_age_included$CAccession), ]
   
@@ -372,7 +372,7 @@ plot_sample_categories_cancer_specific_drug <- function(GDSC_age_included) {
               vjust = -0.1, size = 3, inherit.aes = FALSE) +
     theme_minimal(base_size = 15) +
     labs(x = "", y = "Number of Cell Lines", fill = "MSI Status") +
-    scale_fill_manual(values = c("MSI" = "#2296E6", "MSS" = "#61D04F")) +
+    scale_fill_manual(values = c("MSI" = "#CD8C95", "MSS" = "#6E8B3D")) +
     theme(
       panel.border = element_rect(color = "black", fill = NA, size = 1.5),
       axis.text.x = element_text(angle = 0, size = 12, hjust = 0.7),
@@ -382,12 +382,10 @@ plot_sample_categories_cancer_specific_drug <- function(GDSC_age_included) {
     ) +
     coord_flip()
   
-  output_path <- paste0(figures_path, "cancer_selection_drug_canc_spec.png")
-  ggsave(output_path, plot = sample_categories_cancer_specific_drug, width = 10, height = 8, dpi = 300)
+  ggsave(output_dir, plot = sample_categories_cancer_specific_drug, width = 10, height = 8, dpi = 1200)
   
   return(sample_categories_cancer_specific_drug)
 }
-
 
 
 
