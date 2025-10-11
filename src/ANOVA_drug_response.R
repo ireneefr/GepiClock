@@ -45,7 +45,7 @@ saveRDS(GDSC_age, "results/cell_lines/cell_lines_drug_sensitivity/cell_lines_per
 table(GDSC_age$status)
 table(GDSC_age$tissue_or_cancer_chosen)
 # plot sample categories
-plot_sample_categories_pan_drug(GDSC_age, 10)
+plot_sample_categories_pan_drug(GDSC_age, 10, output_dir = paste0(figures_path, "tissue_or_cancer_selection_drug_pan.png"))
 plot_included_tissue_pan_drug(GDSC_age)
 
 # ============================

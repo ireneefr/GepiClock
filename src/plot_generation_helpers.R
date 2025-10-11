@@ -140,18 +140,18 @@ distribution_PredAge <- ggplot(cl_samples, aes(x = age_prediction)) +
 
 
 # plot sample categories (tissue/cancer/others) after GDSC-CMP merge - ANOVA DRUG PAN
-plot_sample_categories_pan_drug <- function(GDSC_age, thresh_number) {
+plot_sample_categories_pan_drug <- function(GDSC_age, thresh_number, output_dir) {
   GDSC_age_unique <- GDSC_age %>% distinct(CAccession, .keep_all = TRUE)
   total_samples <- nrow(GDSC_age_unique)
   
   sample_categories_pan_drug <- ggplot(GDSC_age_unique %>%
-                mutate(cancer_type = fct_reorder(cancer_type, table(cancer_type)[cancer_type])),
-              aes(x = cancer_type, fill = status)) +
+                                         mutate(cancer_type = fct_reorder(cancer_type, table(cancer_type)[cancer_type])),
+                                       aes(x = cancer_type, fill = status)) +
     geom_bar(position = "dodge") +
     geom_hline(yintercept = thresh_number, linetype = "dashed", color = "red") +
     theme_minimal(base_size = 15) +
     labs(x = "", y = "Number of Cell Lines", fill = "Status") +
-    scale_fill_manual(values = c("Cancer Type" = "#61D04F", "Tissue Type" = "#2297E6", "Others" = "#DF536B")) +
+    scale_fill_manual(values = c("Cancer Type" = "#EEC591", "Tissue Type" = "#00CDCD", "Others" = "#DF536B")) +
     theme(
       panel.border = element_rect(color = "black", fill = NA, size = 1.5),
       axis.text.x = element_text(angle = 0, size = 12, hjust = 0.7),
@@ -161,12 +161,10 @@ plot_sample_categories_pan_drug <- function(GDSC_age, thresh_number) {
     ) +
     coord_flip()
   
-  output_path <- paste0(figures_path, "tissue_or_cancer_selection_drug_pan.png")
-  ggsave(output_path, plot = sample_categories_pan_drug, width = 10, height = 10, dpi = 300)
+  ggsave(output_dir, plot = sample_categories_pan_drug, width = 10, height = 10, dpi = 1200)
   
   return(sample_categories_pan_drug)
 }
-
 
 
 
