@@ -205,8 +205,8 @@ plot_included_tissue_pan_drug <- function(GDSC_age_unique) {
 
 
 # plot to check normality assumptions of ANOVA residuals
-plot_anova_LNIC50_residuals <- function(residuals_anova_IC50) {
-
+plot_anova_LNIC50_residuals <- function(residuals_anova_IC50, output_dir) {
+  
   hist(residuals_anova_IC50, main = "Residuals Distribution", xlab = "Residuals", breaks = 20, col = "lightgray", border = "black") # histogram of residuals
   
   qqnorm(residuals_anova_IC50) # Q-Q plot for normality check
@@ -219,10 +219,8 @@ plot_anova_LNIC50_residuals <- function(residuals_anova_IC50) {
           col = "lightblue", 
           las = 2)
   
-  output_path <- paste0(figures_path, "anova_LNIC50_residuals_plot.png")
-  ggsave(output_path, width = 10, height = 8, dpi = 300)
+  ggsave(output_dir, width = 10, height = 8, dpi = 1200)
 }
-
 
 
 

@@ -70,7 +70,7 @@ write_xlsx(anova_drug_pancancer_results$correlation_results, "results/cell_lines
 plot_predage_LNIC50_correlation_pan_drug(anova_drug_pancancer_results$correlation_results,
 output_dir = paste0(figures_path, "volcano_ANOVA_drug_pan_cancer.png"))
 # check normality of residuals from ANOVA model
-plot_anova_LNIC50_residuals(anova_drug_pancancer_results$residuals)
+plot_anova_LNIC50_residuals(anova_drug_pancancer_results$residuals, output_dir <- paste0(figures_path, "anova_LNIC50_residuals_plot.png"))
 
 # DRUG SET ENRICHMENT ANALYSIS (DSEA) - PAN-CANCER
 # ------------------------------------------------
