@@ -28,7 +28,6 @@ GDSC_age <- readRDS(paste0(results_path,
 # perform anova anova model for drug response
 anova_drug_pancancer_results <- anova_analysis_drugresponse_pan(GDSC_age,"age_prediction")
 
-# check normality of residuals from ANOVA model
-plot_anova_LNIC50_residuals(anova_drug_pancancer_results$residuals,
-                            output_dir = paste0(figures_path, "anova_LNIC50_residuals_plot.pdf"))
-
+# plot correlation between predicted age and residual drug sensitivity
+plot_predage_LNIC50_correlation_pan_drug(anova_drug_pancancer_results$correlation_results,
+                                         output_dir =  "Supplementary Figures/Supplementary_Figure_9.pdf")
