@@ -205,23 +205,36 @@ plot_included_tissue_pan_drug <- function(GDSC_age_unique) {
 
 
 # plot to check normality assumptions of ANOVA residuals
-plot_anova_LNIC50_residuals <- function(residuals_anova_IC50, output_dir) {
-  
-  hist(residuals_anova_IC50, main = "Residuals Distribution", xlab = "Residuals", breaks = 20, col = "lightgray", border = "black") # histogram of residuals
-  
-  qqnorm(residuals_anova_IC50) # Q-Q plot for normality check
-  qqline(residuals_anova_IC50, col = "red")
-  
-  boxplot(residuals_anova_IC50 ~ GDSC_age$tissue_or_cancer_chosen, # boxplot of residuals per group
-          main = "Distribution of Residuals per Group", 
-          xlab = "", 
-          ylab = "Residuals", 
-          col = "lightblue", 
-          las = 2)
-  
-  ggsave(output_dir, width = 10, height = 8, dpi = 1200)
-}
+plot_anova_LNIC50_residuals <- function(residuals_anova_IC50, output_path) {
+  # Open a PDF device
+  pdf(output_path, width = 10, height = 8)  # width/height are in inches
 
+  # Arrange plots 2x2
+  par(mfrow = c(2, 2))
+
+  # Histogram
+  hist(residuals_anova_IC50,
+       main = "Residuals Distribution",
+       xlab = "Residuals",
+       breaks = 20,
+       col = "lightgray",
+       border = "black")
+
+  # Q-Q plot
+  qqnorm(residuals_anova_IC50)
+  qqline(residuals_anova_IC50, col = "red")
+
+  # Boxplot per group
+  boxplot(residuals_anova_IC50 ~ GDSC_age$tissue_or_cancer_chosen,
+          main = "Distribution of Residuals per Group",
+          xlab = "",
+          ylab = "Residuals",
+          col = "lightblue",
+          las = 2)
+
+  # Close device
+  dev.off()
+}
 
 
 
