@@ -316,8 +316,64 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
 
 
 
+# stacked bar plot showing the number of drugs associated.
+plot_number_target_drug <- function(significant_results_DSEA_df, dsea_pan_cancer_results, ordered_targets = NULL, output_dir, title = NULL) {
+  # --- Extract and count drugs per pathway ---
+  pathway_drugs <- significant_results_DSEA_df %>%
+    filter(pathway %in% ordered_targets) %>%
+    mutate(Drug = strsplit(leadingEdge, ", ")) %>%
+    unnest(Drug) %>%
+    mutate(Drug = trimws(Drug))
+  
+  pathway_drugs_summary <- pathway_drugs %>%
+    group_by(pathway) %>%
+    summarise(Drug_Count = n(), .groups = "drop")
+  
+  # --- Add NES info from dsea_pan_cancer_results to classify Young vs Old ---
+  nes_info <- dsea_pan_cancer_results %>%
+    select(pathway, NES) %>%
+    distinct()
+  
+  pathway_drugs_summary <- pathway_drugs_summary %>%
+    left_join(nes_info, by = "pathway") %>%
+    mutate(
+      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"),
+      pathway = factor(pathway, levels = ordered_targets)
+    )
+  
+  # --- Colors for Young vs Old ---
+  color_palette <- c("Young predicted" = "#4C72B0", "Old predicted" = "#E69F00")
+  
+  # --- Barplot ---
+  number_drugs_plot <- ggplot(pathway_drugs_summary, aes(x = pathway, y = Drug_Count, fill = Young_Old)) +
+    geom_bar(stat = "identity", width = 0.8, alpha = 0.8) +
+    scale_fill_manual(values = color_palette, name = "Predicted Group") +
+    labs(
+      title = title,
+      x = "Significant Drug Target",
+      y = "Number of Drugs"
+    ) +
+    theme_minimal(base_size = 20) +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA, size = 1.2),
+      axis.text.x = element_text(size = 14),
+      axis.text.y = element_text(size = 14),
+      legend.title = element_text(size = 14),
+      legend.text = element_text(size = 14)
+    ) +
+    coord_flip()
+  
+  # --- Save ---
+  ggsave(output_dir, plot = number_drugs_plot, width = 12, height = 8, dpi = 600)
+  
+  return(number_drugs_plot)
+}
 
-# stacked bar plot showing the number of drugs associated with each statistically significant drug target.
+
+
+
+
+# stacked bar plot showing the number and the name of drugs associated with each statistically significant drug target.
 plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_targets = NULL, output_dir) {
   # extract drugs from leadingEdge
   pathway_drugs <- significant_results_DSEA_df %>%
