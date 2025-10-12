@@ -114,7 +114,7 @@ saveRDS(gene_dep_age_filtered, "results/cell_lines/cell_lines_gene_dependencies/
 # plot sample categories
 plot_sample_categories_cancer_specific_gene(gene_dep_age_filtered,
                                             output_dir = paste0(figures_path,
-                                                                "cancer_selection_genedep_canc_spec.png")
+                                                                "cancer_selection_genedep_canc_spec.png"))
 
 # ANOVA MODEL FOR GENE DEPENDENCIES (Cancer-Specific)
 # -----------------------------------------------

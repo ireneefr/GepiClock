@@ -786,7 +786,7 @@ GSEA_yo_dotplot <- function(gsea_result, title, output_filename) {
     )  
   
   output_path <- paste0(figures_path, output_filename)
-  ggsave(output_path, plot = gsea_dotplot, width = 14, height = 8, dpi = 300)
+  ggsave(output_path, plot = gsea_dotplot, width = 14, height = 8, dpi = 1200)
   
   return(gsea_dotplot)
 }
@@ -835,7 +835,7 @@ GSEA_yo_barplot <- function(gsea_result, title, output_filename) {
     )
   
   output_path <- paste0(figures_path, output_filename)
-  ggsave(output_path, plot = gsea_barplot, width = 14, height = 8, dpi = 300)
+  ggsave(output_path, plot = gsea_barplot, width = 14, height = 8, dpi = 1200)
   
   return(gsea_barplot)
 }
