@@ -768,7 +768,7 @@ GSEA_yo_dotplot <- function(gsea_result, title, output_filename) {
     scale_color_manual(values = color_palette, name = "Predicted Group") +
     scale_size_continuous(range = c(4, 11), name = "-log10(p.adjust)") +
     labs(
-      title = NULL,
+      title = title,
       x = "Normalized Enrichment Score (NES)",
       y = "Pathway"
     ) +
@@ -821,7 +821,7 @@ GSEA_yo_barplot <- function(gsea_result, title, output_filename) {
     geom_bar(stat = "identity", alpha = 0.7) +
     scale_fill_manual(values = color_palette, name = "Predicted Group") +
     labs(
-      title = NULL,
+      title = title,
       x = "Number of Genes",
       y = NULL
     ) +
