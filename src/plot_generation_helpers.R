@@ -645,7 +645,7 @@ dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) 
 
 # bar plot showing the distribution of cell lines categorized as Cancer Type, 
 # Tissue Type, or Others, with a threshold reference line.
-plot_sample_categories_pan_gene <- function(depmap_combined, thresh_number) {   
+plot_sample_categories_pan_gene <- function(depmap_combined, thresh_number, output_dir) {   
   # consider only unique cell lines
   depmap_unique <- depmap_combined %>% distinct(BROAD_ID, .keep_all = TRUE)   
   
@@ -657,7 +657,7 @@ plot_sample_categories_pan_gene <- function(depmap_combined, thresh_number) {
     geom_hline(yintercept = thresh_number, linetype = "dashed", color = "red") + 
     theme_minimal(base_size = 15) + 
     labs(x = "", y = "Number of Cell Lines", fill = "Status") + 
-    scale_fill_manual(values = c("Cancer Type" = "#61D04F", "Tissue Type" = "#2297E6", "Others" = "#DF536B")) + 
+    scale_fill_manual(values = c("Cancer Type" = "#EEC591", "Tissue Type" = "#00CDCD", "Others" = "#DF536B")) + 
     theme(
       panel.border = element_rect(color = "black", fill = NA, size = 1.5),
       axis.text.x = element_text(angle = 0, size = 12, hjust = 0.7),
@@ -667,12 +667,10 @@ plot_sample_categories_pan_gene <- function(depmap_combined, thresh_number) {
     ) + 
     coord_flip()
   
-  output_path <- paste0(figures_path, "tissue_or_cancer_selection_gene_pan.png")
-  ggsave(output_path, plot = sample_categories_pan_gene, width = 10, height = 10, dpi = 300)
+  ggsave(output_dir, plot = sample_categories_pan_gene, width = 10, height = 10, dpi = 1200)
   
   return(sample_categories_pan_gene)
 }
-
 
 
 
@@ -847,7 +845,7 @@ GSEA_yo_barplot <- function(gsea_result, title, output_filename) {
 
 
 # bar plot showing the number of unique cancer-specific cell lines, grouped by MSI status - ANOVA GENE CANCER SPECIFIC
-plot_sample_categories_cancer_specific_gene <- function(gene_dep_age_filtered) {
+plot_sample_categories_cancer_specific_gene <- function(gene_dep_age_filtered, output_dir) {
   # unique cell lines
   gene_dep_age_unique_filtered<- gene_dep_age_filtered[!duplicated(gene_dep_age_filtered$CAccession), ]
   
@@ -863,7 +861,7 @@ plot_sample_categories_cancer_specific_gene <- function(gene_dep_age_filtered) {
               vjust = -0.1, size = 3, inherit.aes = FALSE) +
     theme_minimal(base_size = 15) +
     labs(x = "", y = "Number of Cell Lines", fill = "MSI Status") +
-    scale_fill_manual(values = c("MSI" = "#2296E6", "MSS" = "#61D04F")) +
+    scale_fill_manual(values = c("MSI" = "#CD8C95", "MSS" = "#6E8B3D")) +
     theme(
       panel.border = element_rect(color = "black", fill = NA, size = 1.5),
       axis.text.x = element_text(angle = 0, size = 12, hjust = 0.7),
@@ -873,12 +871,10 @@ plot_sample_categories_cancer_specific_gene <- function(gene_dep_age_filtered) {
     ) +
     coord_flip()
   
-  output_path <- paste0(figures_path, "cancer_selection_genedep_canc_spec.png")
-  ggsave(output_path, plot = cancer_plot, width = 10, height = 8, dpi = 300)
+  ggsave(output_dir, plot = cancer_plot, width = 10, height = 8, dpi = 1200)
   
   return(cancer_plot)
 }
-
 
 
 

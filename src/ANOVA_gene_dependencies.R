@@ -45,7 +45,8 @@ saveRDS(gene_dep_age, "results/cell_lines/cell_lines_gene_dependencies/cell_line
 
 # plot sample categories
 depmap_combined <- merged_dep_cls$depmap_combined
-plot_sample_categories_pan_gene(depmap_combined, thresh_number = 10)
+plot_sample_categories_pan_gene(depmap_combined, thresh_number = 10,
+                                output_dir = paste0(figures_path, "tissue_or_cancer_selection_gene_pan.png"))
 plot_included_tissue_pan_gene(depmap_combined)
 
 # ============================
@@ -111,7 +112,9 @@ print(paste("In the cancer type-specific analysis, the number of cell lines afte
 saveRDS(gene_dep_age_filtered, "results/cell_lines/cell_lines_gene_dependencies/cell_lines_per_genes_cancer_specific.rds")
 
 # plot sample categories
-plot_sample_categories_cancer_specific_gene(gene_dep_age_filtered)
+plot_sample_categories_cancer_specific_gene(gene_dep_age_filtered,
+                                            output_dir = paste0(figures_path,
+                                                                "cancer_selection_genedep_canc_spec.png")
 
 # ANOVA MODEL FOR GENE DEPENDENCIES (Cancer-Specific)
 # -----------------------------------------------
