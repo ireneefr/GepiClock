@@ -67,7 +67,7 @@ anova_gene_pancancer_results <- anova_analysis_genedep_pan(gene_dep_age)
 correlation_results_ANOVA_gene_pan <- anova_gene_pancancer_results$correlation_results
 
 # save results
-write_xlsx(correlation_results_ANOVA_gene_pan, "results/cell_lines/cell_lines_drug_sensitivity/anova_pancancer_correlation_results.xlsx")
+write_xlsx(correlation_results_ANOVA_gene_pan, "results/cell_lines/cell_lines_gene_dependencies/anova_pancancer_correlation_results.xlsx")
 
 plot_predage_gene_effect_correlation_pan_gene(correlation_results_ANOVA_gene_pan)
 
