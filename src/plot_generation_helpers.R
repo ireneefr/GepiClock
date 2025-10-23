@@ -1093,7 +1093,21 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
     arrange(desc(abs(NES))) %>%
     slice_head(n = 3) %>%  # select top 3 pathways per cancer type
     ungroup()
-  
+
+  # wrap pathway names to max 4 words
+  significant_results <- significant_results %>%
+  mutate(Description = sapply(strsplit(Description, " "), function(words) {
+    if (length(words) > 4) {
+        # insert a line break every 4 words
+        paste(sapply(seq(1, length(words), by = 4), function(i)
+        paste(words[i:min(i + 3, length(words))], collapse = " ")),
+            collapse = "\n"
+        )
+        } else {
+        paste(words, collapse = " ")
+        }
+    }))
+
   # print unique NES categories to check
   print("Unique NES categories:")
   print(unique(significant_results$NES_category))
@@ -1154,7 +1168,6 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
   
   return(gsea_dotplot)
 }
-
 
 
 
