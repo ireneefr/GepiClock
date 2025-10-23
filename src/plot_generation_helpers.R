@@ -1164,7 +1164,7 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
     guides(color = guide_legend(override.aes = list(size = 8)))
   
   # save the plot
-  ggsave(output_dir, plot = gsea_dotplot, width = 14, height = 12, dpi = 600)
+  ggsave(output_dir, plot = gsea_dotplot, width = 14, height = 13, dpi = 600)
   
   return(gsea_dotplot)
 }
