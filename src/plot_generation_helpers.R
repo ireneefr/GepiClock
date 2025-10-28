@@ -271,7 +271,7 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
     arrange(desc(abs(NES))) %>%
     slice(1:10) %>%
     mutate(
-      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"),
+      Young_Old = ifelse(NES > 0, "Positive", "Negative"),
       Significance = -log10(padj)
     )
   
@@ -280,12 +280,12 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
     arrange(NES) %>%
     pull(pathway)
   
-  color_palette <- c("Young predicted" = "#4C72B0", "Old predicted" = "#E69F00")
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
   
   # dotplot
   dsea_pan_dotplot <- ggplot(top_terms, aes(x = NES, y = reorder(pathway, NES), size = Significance, color = Young_Old)) +
     geom_point(alpha = 0.7) +
-    scale_color_manual(values = color_palette, name = "Predicted Group") +
+    scale_color_manual(values = color_palette, name = "cor(pred_age, IC50)") +
     scale_size_continuous(range = c(4, 11), name = "-log10(p.adjust)") +
     labs(
       title = NULL,
@@ -337,17 +337,17 @@ plot_number_target_drug <- function(significant_results_DSEA_df, dsea_pan_cancer
   pathway_drugs_summary <- pathway_drugs_summary %>%
     left_join(nes_info, by = "pathway") %>%
     mutate(
-      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"),
+      Young_Old = ifelse(NES > 0, "Positive", "Negative"),
       pathway = factor(pathway, levels = ordered_targets)
     )
   
   # --- Colors for Young vs Old ---
-  color_palette <- c("Young predicted" = "#4C72B0", "Old predicted" = "#E69F00")
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
   
   # --- Barplot ---
   number_drugs_plot <- ggplot(pathway_drugs_summary, aes(x = pathway, y = Drug_Count, fill = Young_Old)) +
     geom_bar(stat = "identity", width = 0.8, alpha = 0.8) +
-    scale_fill_manual(values = color_palette, name = "Predicted Group") +
+    scale_fill_manual(values = color_palette, name = "cor(pred_age, IC50)") +
     labs(
       title = title,
       x = "Significant Drug Target",
@@ -621,12 +621,12 @@ dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) 
   library(MutExMatSorting)   
   library(reshape2)       
   
-  color_palette <- c("Young Predicted" = "#4C72B0", "Old Predicted" = "#E69F00")     
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")     
   
   # classification column   
   significant_results <- significant_results %>%     
     mutate(
-      NES_category = ifelse(NES > 0, "Old Predicted", "Young Predicted"),
+      NES_category = ifelse(NES > 0, "Positive", "Negative"),
       NES_category = trimws(NES_category) # remove spaces 
     )  
   
@@ -671,8 +671,8 @@ dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) 
     scale_size(range = c(3, 10), name = "NES (absolute)") +     
     scale_color_manual(
       values = color_palette, 
-      name = "Predicted Group", 
-      breaks = c("Young Predicted", "Old Predicted")
+      name = "cor(pred_age, IC50)", 
+      breaks = c("Negative", "Positive")
     ) +     
     theme_minimal() +     
     labs(       
@@ -805,7 +805,7 @@ GSEA_yo_dotplot <- function(gsea_result, title, output_filename) {
   # df for plot
   gsea_results_df <- gsea_results_df %>%
     mutate(
-      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"), 
+      Young_Old = ifelse(NES > 0, "Positive", "Negative"), 
       Significance = -log10(p.adjust) 
     ) %>%
     arrange(desc(abs(NES))) %>% # order per nes
@@ -816,12 +816,12 @@ GSEA_yo_dotplot <- function(gsea_result, title, output_filename) {
   gsea_results_df$Description <- factor(gsea_results_df$Description, levels = gsea_results_df$Description[order(-gsea_results_df$NES)])
   
   # colours
-  color_palette <- c("Young predicted" = "#4C72B0", "Old predicted" = "#E69F00")
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
   
   # dotplot
   gsea_dotplot <- ggplot(gsea_results_df, aes(x = NES, y = Description, size = Significance, color = Young_Old)) +
     geom_point(alpha = 0.7) +
-    scale_color_manual(values = color_palette, name = "Predicted Group") +
+    scale_color_manual(values = color_palette, name = "cor(pred_age, IC50") +
     scale_size_continuous(range = c(4, 11), name = "-log10(p.adjust)") +
     labs(
       title = title,
@@ -859,7 +859,7 @@ GSEA_yo_barplot <- function(gsea_result, title, output_filename) {
   # df for the plot
   gsea_results_df <- gsea_results_df %>%
     mutate(
-      Young_Old = ifelse(NES > 0, "Old predicted", "Young predicted"), 
+      Young_Old = ifelse(NES > 0, "Positive", "Negative"), 
       Significance = -log10(p.adjust)
     ) %>%
     arrange(desc(abs(NES))) %>% # order per NES
@@ -870,12 +870,12 @@ GSEA_yo_barplot <- function(gsea_result, title, output_filename) {
   gsea_results_df$Description <- factor(gsea_results_df$Description, levels = gsea_results_df$Description[order(-gsea_results_df$NES)])
   
   # colours
-  color_palette <- c("Young predicted" = "#4C72B0", "Old predicted" = "#E69F00")
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
   
   # barplot
   gsea_barplot <- ggplot(gsea_results_df, aes(x = setSize, y = Description, fill = Young_Old)) +
     geom_bar(stat = "identity", alpha = 0.7) +
-    scale_fill_manual(values = color_palette, name = "Predicted Group") +
+    scale_fill_manual(values = color_palette, name = "cor(pred_age, IC50)") +
     labs(
       title = title,
       x = "Number of Genes",
@@ -1080,13 +1080,13 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
   
   set.seed(123) 
   
-  color_palette <- c("Young Predicted" = "#4C72B0", "Old Predicted" = "#E69F00")
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
   
   # classify pathways based on NES sign
   significant_results <- significant_results_bp_df %>%
     filter(p.adjust < 0.05) %>%  # keep only significant pathways
     mutate(
-      NES_category = ifelse(NES > 0, "Old Predicted", "Young Predicted"),
+      NES_category = ifelse(NES > 0, "Positive", "Negative"),
       NES_category = trimws(NES_category) 
     ) %>%
     group_by(cancer_type) %>%
@@ -1144,8 +1144,8 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
     scale_size(range = c(3, 10), name = "Gene Ratio") +
     scale_color_manual(
       values = color_palette,
-      name = "Predicted Group",
-      breaks = c("Young Predicted", "Old Predicted")
+      name = "cor(pred_age, IC50)",
+      breaks = c("Negative", "Positive")
     ) +
     theme_minimal() +
     labs(
