@@ -817,6 +817,9 @@ GSEA_yo_dotplot <- function(gsea_result, title, output_filename) {
     arrange(desc(abs(NES))) %>% # order per nes
     slice(1:20) %>% # Stop 20
     arrange(NES) 
+ 
+  # explicitly set factor levels so legend order is correct
+  gsea_results_df$Young_Old <- factor(gsea_results_df$Young_Old, levels = c("Positive", "Negative"))
   
   # how to visualize them
   gsea_results_df$Description <- factor(gsea_results_df$Description, levels = gsea_results_df$Description[order(-gsea_results_df$NES)])
@@ -872,6 +875,9 @@ GSEA_yo_barplot <- function(gsea_result, title, output_filename) {
     slice(1:20) %>% # top 20
     arrange(NES) 
   
+  # explicitly set factor levels so legend order is correct
+  gsea_results_df$Young_Old <- factor(gsea_results_df$Young_Old, levels = c("Positive", "Negative"))
+
   # # how to visualize them
   gsea_results_df$Description <- factor(gsea_results_df$Description, levels = gsea_results_df$Description[order(-gsea_results_df$NES)])
   
@@ -1151,7 +1157,7 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
     scale_color_manual(
       values = color_palette,
       name = "cor(pred_age, IC50)",
-      breaks = c("Negative", "Positive")
+      breaks = c("Positive", "Negative")
     ) +
     theme_minimal() +
     labs(
