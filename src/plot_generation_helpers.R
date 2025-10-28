@@ -274,6 +274,9 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
       Young_Old = ifelse(NES > 0, "Positive", "Negative"),
       Significance = -log10(padj)
     )
+
+ # explicitly set factor levels so legend order is correct
+  top_terms$Young_Old <- factor(top_terms$Young_Old, levels = c("Positive", "Negative"))
   
   # order pathways by NES (same as reorder(pathway, NES))
   ordered_targets <- top_terms %>%
@@ -340,7 +343,10 @@ plot_number_target_drug <- function(significant_results_DSEA_df, dsea_pan_cancer
       Young_Old = ifelse(NES > 0, "Positive", "Negative"),
       pathway = factor(pathway, levels = ordered_targets)
     )
-  
+ 
+  # explicitly set factor levels so legend order is correct
+  pathway_drugs_summary$Young_Old <- factor(pathway_drugs_summary$Young_Old, levels = c("Positive", "Negative"))
+ 
   # --- Colors for Young vs Old ---
   color_palette <- c("Positive" = "#E69F00", "Negative" = "#4C72B0")
   
