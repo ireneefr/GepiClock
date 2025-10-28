@@ -678,7 +678,7 @@ dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) 
     scale_color_manual(
       values = color_palette, 
       name = "cor(pred_age, IC50)", 
-      breaks = c("Negative", "Positive")
+      breaks = c("Positive", "Negative")
     ) +     
     theme_minimal() +     
     labs(       
