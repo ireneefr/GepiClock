@@ -280,7 +280,7 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
     arrange(NES) %>%
     pull(pathway)
   
-  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
+  color_palette <- c("Positive" = "#E69F00", "Negative" = "#4C72B0")
   
   # dotplot
   dsea_pan_dotplot <- ggplot(top_terms, aes(x = NES, y = reorder(pathway, NES), size = Significance, color = Young_Old)) +
@@ -342,7 +342,7 @@ plot_number_target_drug <- function(significant_results_DSEA_df, dsea_pan_cancer
     )
   
   # --- Colors for Young vs Old ---
-  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
+  color_palette <- c("Positive" = "#E69F00", "Negative" = "#4C72B0")
   
   # --- Barplot ---
   number_drugs_plot <- ggplot(pathway_drugs_summary, aes(x = pathway, y = Drug_Count, fill = Young_Old)) +
