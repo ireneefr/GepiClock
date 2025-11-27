@@ -49,12 +49,16 @@ test <- samples_model[-train_rows, "barcode"]
 
 
 # Combine information
+tcga_samples_model <- tcga_samples_sub[tcga_samples_sub$barcode %in% c(train, test),]
+tcga_samples_model[tcga_samples_model$barcode %in% train, "data_set"] <- "Primary Tumour (Train)"
+tcga_samples_model[tcga_samples_model$barcode %in% test, "data_set"] <- "Primary Tumour (Test)"
 tcga_samples_sub[tcga_samples_sub$barcode %in% test, "data_set"] <- "Primary Tumour (Test)"
 tcga_samples_sub[tcga_samples_sub$barcode %in% samples_nomodel$barcode, "data_set"] <- "Primary Tumour (Others)"
 tcga_samples_sub[tcga_samples_sub$barcode %in% samples_normal$barcode, "data_set"] <- "Normal Tissue"
 tcga_samples_sub <- tcga_samples_sub[!is.na(tcga_samples_sub$data_set),]
 tcga_samples_sub$sample_type <- factor(tcga_samples_sub$data_set, levels = c("Normal Tissue", "Primary Tumour (Test)", "Primary Tumour (Others)"))
 
+tcga_samples_model <- merge(tcga_samples_model, pred_RebolloI2025, by.x = "barcode", by.y = "sample")
 tcga_samples_sub <- merge(tcga_samples_sub, pred_RebolloI2025, by.x = "barcode", by.y = "sample")
 tcga_samples_sub <- merge(tcga_samples_sub, pred_HorvathS2013, by.x = "barcode", by.y = "sample")
 tcga_samples_sub <- merge(tcga_samples_sub, pred_HannumG2013, by.x = "barcode", by.y = "sample")
@@ -87,11 +91,11 @@ png(filename = "/Volumes/iorio/Irene/epiclock/plots/clocks_performance.png",
 ggplot(correlation_by_group, aes(x = Clock, y = R, fill = Sample_type)) +
   geom_col(position = "dodge", width = 0.75) +
   scale_fill_manual(name = "", values = color_type) +
-  xlab("") + ylab("Pearson Correlation (R)") + ylim(c(0,1)) +
+  xlab("Epigenetic Clocks") + ylab("Pearson Correlation (R)") + ylim(c(0,1)) +
   scale_x_discrete(limits=rev) +
   theme_bw(base_size = 20) + 
   theme(axis.text = element_text(color = "black"),
-        legend.position = "bottom") +
+        legend.position = "top") +
   coord_flip()
 dev.off()
 
@@ -135,6 +139,67 @@ dev.off()
 # write_xlsx(list("Pearson correlations" = correlation_by_group,
 #                 "Pearson correlations by project" = correlation_by_group2),
 #            path = "/Volumes/iorio/Irene/git_epiclock/res/Pearson_correlations.xlsx")
+
+# Correlation by project in test
+project_correlation <- tcga_samples_model %>%
+  group_by(project, data_set) %>%
+  summarise(correlation = cor(age_at_index, RebolloI2025),
+            N = n()) %>%
+  arrange(correlation) %>%
+  mutate(project = fct_reorder(project, correlation))
+head(project_correlation)
+
+p1 <- ggplot(project_correlation, aes(x = correlation, y = project, fill = data_set)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  theme_minimal(base_size = 15) +
+  labs(x = "Correlation", y = NULL) +
+  scale_fill_manual(values = c("steelblue1", "purple3")) +
+  theme(legend.position = "top") +
+  scale_x_reverse() +
+  scale_y_discrete(position = "right")
+p2 <- ggplot(project_correlation, aes(x = N, y = project, fill = data_set)) +
+  geom_col(position = position_dodge(width = 0.7), width = 0.6) +
+  theme_minimal(base_size = 15) +
+  labs(x = "Sample Size (N)", y = NULL) +
+  scale_fill_manual(values = c("steelblue1", "purple3")) +
+  theme(axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+library(patchwork)
+p1 + p2 + plot_layout(widths = c(1, 1))
+
+ggplot(project_correlation, aes(x = N, y = correlation, color = project)) +
+  geom_point()
+
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+# Separate dataframes by group
+N_data <- project_correlation %>% 
+  select(project, data_set, N) %>% 
+  rename(N_group = data_set, N_value = N)
+
+corr_data <- project_correlation %>% 
+  select(project, data_set, correlation) %>% 
+  rename(corr_group = data_set, corr_value = correlation)
+
+# Cross join
+quad_data <- full_join(N_data, corr_data, by = "project")
+
+# Create a label for each quadrant
+quad_data <- quad_data %>%
+  mutate(quadrant = paste0("N: ", N_group, "\nCorr: ", corr_group))
+corr_labels <- quad_data %>%
+  group_by(quadrant) %>%
+  summarise(correlation = cor(N_value, corr_value, method = "pearson", use = "complete.obs")) %>%
+  mutate(label = paste0("r = ", round(correlation, 2)))
+ggplot(quad_data, aes(x = N_value, y = corr_value, color = project)) +
+  geom_point(size = 3) +
+  facet_wrap(~ quadrant, ncol = 2) +
+  geom_text(data = corr_labels, aes(x = -Inf, y = Inf, label = label),
+            hjust = -0.1, vjust = 1.2, inherit.aes = FALSE, size = 4) +
+  labs(x = "N", y = "Correlation", title = "Quadrant Scatterplot by Group Combinations") +
+  theme_minimal()
 
 # Correlation by project in test
 project_correlation <- tcga_samples_sub[tcga_samples_sub$sample_type == "Primary Tumour (Test)",] %>%

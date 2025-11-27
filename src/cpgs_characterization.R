@@ -79,13 +79,14 @@ combined_data <- bind_rows(gene_region_horvath,
                            gene_region_horvath2,
                            gene_region_levine,
                            gene_region)
-
+combined_data$source <- factor(combined_data$source, levels = rev(c("HannumG2013", "HorvathS2013", "HorvathS2018", "LevineM2018", "RebolloI2025")))  # Replace with your desired order
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_gene_clocks.png",
-    width = 8, height = 5, units = 'in', res = 600)
-ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("No gene", "Gene")))) +
+    width = 6, height = 4, units = 'in', res = 600)
+ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, levels = c("Gene", "No gene")))) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = c('deepskyblue3', 'grey80'), name = "", breaks = c("Gene", "No gene")) +
-  xlab("") + ylab("%CpGs") +
+  scale_y_reverse(limits = c(100, 0)) +  # Reverse y-axis from 100 to 0
+  xlab("Epigenetic Clocks") + ylab("%CpGs") +
   coord_flip() +
   theme_minimal(base_size = 20) +
   theme(axis.text = element_text(color = "black"),
@@ -134,7 +135,7 @@ combined_data_sorted <- combined_data %>%
   arrange(group)
 
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_region.png",
-    width = 10, height = 5, units = 'in', res = 600)
+    width = 6, height = 5, units = 'in', res = 600)
 ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = RColorBrewer::brewer.pal(length(gene_order), "Set2"),
@@ -161,14 +162,15 @@ combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
 combined_data_sorted <- combined_data %>%
   arrange(group)
 
+combined_data$source <- factor(combined_data$source, levels = rev(c("HannumG2013", "HorvathS2013", "HorvathS2018", "LevineM2018", "RebolloI2025")))  # Replace with your desired order
 png(filename = "/Volumes/iorio/Irene/epiclock/plots/cpgs_region_clocks.png",
-    width = 8, height = 5, units = 'in', res = 600)
+    width = 6, height = 4, units = 'in', res = 600)
 ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = RColorBrewer::brewer.pal(length(gene_order), "Set2"),
                     breaks = gene_order,
                     name = "") +
-  xlab("") + ylab("%CpGs") +
+  xlab("Epigenetic Clocks") + ylab("%CpGs") +
   coord_flip() +
   theme_minimal(base_size = 20) +
   theme(axis.text = element_text(color = "black"),
