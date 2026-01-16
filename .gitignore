@@ -2,4 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+*.Rproj
 **/.DS_Store
+results/TCGA/model/predictions/missing/
+results/TCGA/model/predictions/reducing/
