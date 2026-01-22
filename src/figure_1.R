@@ -46,7 +46,7 @@ tcga_samples_sub[tcga_samples_sub$barcode %in% test, "data_set"] <- "Primary Tum
 tcga_samples_sub[tcga_samples_sub$barcode %in% samples_nomodel$barcode, "data_set"] <- "Primary Tumour (Others)"
 tcga_samples_sub[tcga_samples_sub$barcode %in% samples_normal$barcode, "data_set"] <- "Normal Tissue"
 tcga_samples_sub <- tcga_samples_sub[!is.na(tcga_samples_sub$data_set),]
-tcga_samples_sub$sample_type <- factor(tcga_samples_sub$data_set, levels = c("Normal Tissue", "Primary Tumour (Test)", "Primary Tumour (Others)"))
+tcga_samples_sub$sample_type <- factor(tcga_samples_sub$data_set, levels = c("Primary Tumour (Test)", "Primary Tumour (Others)", "Normal Tissue"))
 
 tcga_samples_sub <- merge(tcga_samples_sub, pred_RebolloI2025, by.x = "barcode", by.y = "sample")
 tcga_samples_sub <- merge(tcga_samples_sub, pred_HorvathS2013, by.x = "barcode", by.y = "sample")
@@ -56,7 +56,7 @@ tcga_samples_sub <- merge(tcga_samples_sub, pred_LevineM2018, by.x = "barcode", 
 tcga_samples_sub_plot <- tcga_samples_sub %>% 
   pivot_longer(c(HorvathS2013, HannumG2013, HorvathS2018, LevineM2018, RebolloI2025), names_to = "clock", values_to = "pred_age")
 color_type <- c("Primary Tumour (Test)" = "steelblue1",
-                "Primary Tumour (Others)" = "steelblue3",
+                "Primary Tumour (Others)" = "blueviolet",
                 "Normal Tissue" = "chartreuse3")
 
 # Obtain correlations
@@ -68,27 +68,27 @@ correlation_by_group <- tcga_samples_sub_plot %>%
 
 # Barplot
 ggplot(correlation_by_group, aes(x = Clock, y = R, fill = Sample_type)) +
-  geom_col(position = "dodge", width = 0.75) +
+  geom_col(position = position_dodge2(reverse = TRUE, padding = 0), width = 0.75) +
   scale_fill_manual(name = "", values = color_type,
-                    labels = c("Normal", "Tumour (test)", "Tumour (other)")) +
-  xlab("") + ylab("Pearson Correlation (R)") + ylim(c(0,1)) +
-  scale_x_discrete(limits=rev, labels = c("HannumG2013" = "Hannum (2013)",
-                                          "HorvathS2013" = "Horvath (2013)",
-                                          "HorvathS2018" = "Horvath (2018)",
-                                          "LevineM2018" = "Levine (2018)",
+                    labels = c("Tumour samples\n(Test set)", "Tumour samples\n(Independent set)", "Normal samples\n(Independent set)")) +
+  xlab("") + ylab("Pearson's correlation between\npredicted and chronological age") + ylim(c(0,1)) +
+  scale_x_discrete(limits=rev, labels = c("HannumG2013" = "Hannum",
+                                          "HorvathS2013" = "Horvath\n2013",
+                                          "HorvathS2018" = "Horvath\n2018",
+                                          "LevineM2018" = "Levine",
                                           "RebolloI2025" = "Rebollo")) +
-  theme_bw(base_size = 20) + 
+  theme_minimal(base_size = 20) + 
   theme(axis.text = element_text(color = "black"),
         legend.position = "bottom") +
   coord_flip()
-ggsave("Figures/Figure2B.pdf", dpi = 600, width = 8, height = 6)
+ggsave("Figures/Figure1C.pdf", dpi = 300, width = 8, height = 6)
 
 # Scatterplot
 freq_sample_type <- as.data.frame(table(tcga_samples_sub$sample_type))
 colnames(freq_sample_type) <- c("Sample_type", "Freq")
 tcga_samples_sub$Sample_type <- tcga_samples_sub$sample_type
 ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_type)) +
-  geom_point(color = "black", shape = 21, alpha = 0.6, size = 2) +
+  geom_point(color = "black", shape = 21, alpha = 0.6, size = 2, stroke = 0.3) +
   geom_smooth(method = "lm", color = "black", linewidth = 0.75, aes(fill = NULL), show.legend = FALSE) +
   scale_fill_manual(name = "Data subset", values = color_type) +
   geom_text(data = freq_sample_type,
@@ -100,17 +100,17 @@ ggplot(tcga_samples_sub, aes(x = age_at_index, y = RebolloI2025, fill = sample_t
   geom_text(data = correlation_by_group[correlation_by_group$Clock == "RebolloI2025",],
             aes(x = 5, y = 83, label = paste("Pval =", formatC(Pval, format = "e", digits = 0))),  
             inherit.aes = FALSE, size = 4, hjust = 0) +
-  facet_wrap(.~Sample_type, ncol = 1, labeller = as_labeller(c("Normal Tissue" = "Normal",
-                                                               "Primary Tumour (Test)" = "Tumour (test)",
-                                                               "Primary Tumour (Others)" = "Tumour (other)"))) +
+  facet_wrap(.~Sample_type, ncol = 1, labeller = as_labeller(c("Normal Tissue" = "Normal samples\n(Independent set)",
+                                                               "Primary Tumour (Test)" = "Tumour samples\n(Test set)",
+                                                               "Primary Tumour (Others)" = "Tumour samples\n(Independent set)"))) +
   xlab("Chronological Age") + ylab("Predicted Age") +
   xlim(c(0, 100)) + ylim(c(0, 100)) +
-  theme_bw(base_size = 20) +
+  theme_minimal(base_size = 20) +
   theme(legend.position = "none",
         strip.background = element_blank(),
         strip.text = element_text(color = "black"),
         axis.text = element_text(color = "black"))
-ggsave("Figures/Figure2A.pdf", dpi = 600, width = 5, height = 10)
+ggsave("Figures/Figure1B.pdf", dpi = 300, width = 5, height = 10)
 
 
 # Missing coefficients plot
@@ -148,7 +148,7 @@ res <- rbind(res_test_summary, res_normal_summary, res_tumor_summary)
 
 # Plot
 color_type <- c("Primary Tumour (Test)" = "steelblue1",
-                "Primary Tumour (Others)" = "steelblue3",
+                "Primary Tumour (Others)" = "blueviolet",
                 "Normal Tissue" = "chartreuse3")
 ggplot(res, aes(x = Perc_missing, y = mean,
                 ymin = mean-sd, ymax = mean+sd, fill = data, color = data)) +
@@ -157,8 +157,12 @@ ggplot(res, aes(x = Perc_missing, y = mean,
   geom_point(shape=21, color="black", size=3) +
   scale_fill_manual(values = color_type, name = "Data subset") +
   scale_color_manual(values = color_type, name = "Data subset") +
-  xlab("Missing Coefficients (%)") + ylab("Pearson Correlation (R)") +
-  theme_bw(base_size = 20) +
+  scale_x_reverse(
+    limits = c(1, 0),
+    labels = function(x) x * 100
+  ) +
+  xlab("% of subsampled predictive CpGs") + ylab("Pearson's correlation between\npredicted and chronological age") +
+  theme_minimal(base_size = 20) +
   theme(legend.position = "none",
         axis.text = element_text(color = "black"))
-ggsave("Figures/Figure2C.pdf", dpi = 600, width = 8, height = 6)
+ggsave("Figures/Figure1D.pdf", dpi = 300, width = 8, height = 6)
