@@ -11,6 +11,9 @@ library(BSgenome.Hsapiens.UCSC.hg19)
 library(ggbio)
 library(tidyr)
 library(dplyr)
+library(philentropy) #for distance(X, method = "jensen-shannon")
+library(pheatmap)
+
 dir_metadata <- "metadata/"
 
 # Load data
@@ -217,6 +220,15 @@ gene_region_shared <- get_gene_region_stats(ann_cpgs_shared, "Illumina\narray")
 #         panel.grid.minor.x = element_blank())
 # ggsave("Figures/Figure3B.pdf")
 
+# Jensen-Shannon distance function
+jsd <- function(X) {
+  d <- distance(X, method = "jensen-shannon")
+  m <- as.matrix(d)
+  rownames(m) <- rownames(X)
+  colnames(m) <- rownames(X)
+  m
+}
+
 # Combine with all clocks
 combined_data <- bind_rows(gene_region_horvath,
                            gene_region_hannum,
@@ -240,6 +252,29 @@ ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, level
         panel.grid.minor.x = element_blank())
 dev.off()
 
+df_wide <- combined_data %>%
+  dplyr::select(source, group, percentage) %>%
+  pivot_wider(names_from = group,
+              values_from = percentage,
+              values_fill = 0) %>%
+  arrange(source)
+X <- df_wide %>%
+  dplyr::select(-source) %>%
+  as.matrix() / 100
+rownames(X) <- df_wide$source
+jsd_mat <- jsd(X)
+
+my_colors <- colorRampPalette(c("red3", "white"))(100)
+pdf("Supplementary Figures/Supplementary_Figure_17A.pdf", width = 5, height = 5)
+pheatmap(jsd_mat, 
+         cluster_rows = FALSE,   # Removes row dendrograms
+         cluster_cols = FALSE,   # Removes column dendrograms
+         color = my_colors,      # Applies the simple 2-color gradient
+         display_numbers = FALSE,
+         angle_col = "45",
+         border_color = "white",
+         main = "Jensen-Shannon distance based on\nannotated gene regions")
+dev.off()
 
 # Gene group representation
 # Helper function to calculate gene region statistics
@@ -287,4 +322,28 @@ ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
         legend.position = "top",
         panel.grid.major.y = element_blank(),
         panel.grid.minor.x = element_blank())
+dev.off()
+
+df_wide <- combined_data %>%
+  dplyr::select(source, group, percentage) %>%
+  pivot_wider(names_from = group,
+              values_from = percentage,
+              values_fill = 0) %>%
+  arrange(source)
+X <- df_wide %>%
+  dplyr::select(-source) %>%
+  as.matrix() / 100
+rownames(X) <- df_wide$source
+jsd_mat <- jsd(X)
+
+my_colors <- colorRampPalette(c("red3", "white"))(100)
+pdf("Supplementary Figures/Supplementary_Figure_17B.pdf", width = 5, height = 5)
+pheatmap(jsd_mat,
+         cluster_rows = FALSE,   # Removes row dendrograms
+         cluster_cols = FALSE,   # Removes column dendrograms
+         color = my_colors,      # Applies the simple 2-color gradient
+         display_numbers = FALSE,
+         angle_col = "45",
+         border_color = "white",
+         main = "Jensen-Shannon distance based on\nfunctional genomic annotation")
 dev.off()

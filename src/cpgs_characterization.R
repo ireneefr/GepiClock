@@ -16,6 +16,16 @@ library(org.Hs.eg.db)
 library(ggplot2)
 library(VennDiagram)
 library(ggrepel)
+library(philentropy) #for distance(X, method = "jensen-shannon")
+
+# Jensen-Shannon distance function
+jsd_named <- function(X) {
+  d <- distance(X, method = "jensen-shannon")
+  m <- as.matrix(d)
+  rownames(m) <- rownames(X)
+  colnames(m) <- rownames(X)
+  m
+}
 
 # Load data
 load(paste0(dir_metadata, "HorvathS2013.rda"))
@@ -94,6 +104,19 @@ ggplot(combined_data, aes(x = source, y = percentage, fill = factor(group, level
         panel.grid.major.y = element_blank(),
         panel.grid.minor.x = element_blank())
 dev.off()
+
+
+?prop.test
+# Transform the data
+wide_data <- combined_data %>%
+  pivot_wider(
+    names_from = group,    # Values to become column names
+    values_from = n,       # Values to fill the new columns
+    id_cols = source       # Values to become row names
+  )
+wide_data
+# Pairwise proportion tests
+prop.test(combined_data[combined_data$group == "Gene", "percentage"], combined_data[combined_data$group != "Gene", "percentage"])
 
 # png(filename = "results/TCGA/plots/cpgs_gene.png",
 #     width = 5, height = 5, units = 'in', res = 300)
@@ -188,6 +211,45 @@ dev.off()
 #                     name = "") +
 #   theme_void(base_size = 20)
 # dev.off()
+library(tidyr)
+library(dplyr)
+df_wide <- combined_data %>%
+  dplyr::select(source, group, percentage) %>%
+  pivot_wider(
+    names_from = group,
+    values_from = percentage,
+    values_fill = 0
+  ) %>%
+  arrange(source)
+
+df_wide
+
+X <- df_wide %>%
+  dplyr::select(-source) %>%
+  as.matrix() / 100
+rownames(X) <- df_wide$source
+
+
+
+jsd <- distance(
+  X,
+  method = "jensen-shannon"
+)
+
+jsd_mat <- as.matrix(jsd)
+jsd_mat
+rownames(jsd_mat) <- rownames(X)
+colnames(jsd_mat) <- rownames(X)
+library(pheatmap)
+
+pheatmap(
+  jsd_mat,
+  clustering_distance_rows = "euclidean",
+  clustering_distance_cols = "euclidean",
+  clustering_method = "complete",
+  display_numbers = FALSE,
+  main = "Similarity of models based on genomic annotation profiles"
+)
 
 # Dotplot coefficients
 gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR", "None")

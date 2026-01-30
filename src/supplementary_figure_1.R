@@ -17,12 +17,17 @@ tcga_samples_projects <- merge(tcga_samples, projects, by.x = "project", by.y = 
 
 # Get Supplementary Figure 1
 tcga_palette <- read.csv("metadata/TCGAproject_palette.csv")
-ggplot(tcga_samples_projects, aes(x = age_at_index, y = project, fill = project)) +
+
+pdf("Supplementary Figures/Supplementary_Figure_1.pdf", width = 8, height = 7)
+ggplot(tcga_samples_projects, aes(x = age_at_index, y = project, 
+                                  #fill = project
+                                  )) +
   geom_boxplot() +
-  scale_fill_manual(values = setNames(tcga_palette[,2], tcga_palette[,1])) +
+  #scale_fill_manual(values = setNames(tcga_palette[,2], tcga_palette[,1])) +
   xlab("Age") + ylab("") +
   theme_minimal(base_size = 15) +
   theme(axis.text.x = element_text(color = "black"),
         axis.text.y = element_text(color = "black"),
         legend.position = "none")
+dev.off()
 ggsave("Supplementary Figures/Supplementary_Figure_1.png")
