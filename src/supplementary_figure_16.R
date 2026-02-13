@@ -20,7 +20,7 @@ ann_model_cpgs <- as.data.frame(merge(ann, model_coefs, by.x = "row.names", by.y
 
 # Enrichment analysis - No ranking
 genes <- unique(unlist(strsplit(ann_model_cpgs[ann_model_cpgs$UCSC_RefGene_Name != "", "UCSC_RefGene_Name"], ";")))
-writeLines(genes, "results/TCGA/resources/3337genes.txt")
+#writeLines(genes, "results/TCGA/resources/3337genes.txt")
 enrichbp <- enrichGO(gene = genes,
                      OrgDb = org.Hs.eg.db,
                      keyType = "SYMBOL",
@@ -36,19 +36,21 @@ enrichcc <- enrichGO(gene = genes,
 entrez_ids <- bitr(genes, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
 enrichkegg <- enrichKEGG(gene = entrez_ids$ENTREZID,
                          organism = "hsa")
-png(filename = "Supplementary Figures/Supplementary_Figure_16A.png",
-    width = 7, height = 7, units = 'in', res = 300)
+writexl::write_xlsx(list(GO_BiologicalProcess = enrichbp@result[enrichbp@result$p.adjust <= 0.05,],
+                         GO_MolecularFunction = enrichmf@result[enrichmf@result$p.adjust <= 0.05,],
+                         GO_CellularComponent = enrichcc@result[enrichcc@result$p.adjust <= 0.05,],
+                         KEGG = enrichkegg@result[enrichkegg@result$p.adjust <= 0.05,]),
+                    "Supplementary Tables/Supplementary_Table_4.xlsx")
+
+pdf("Supplementary Figures/Supplementary_Figure_16A.pdf", width = 7, height = 7)
 dotplot(enrichbp, title = "GO Biological Process")
 dev.off()
-png(filename = "Supplementary Figures/Supplementary_Figure_16B.png",
-    width = 7, height = 7, units = 'in', res = 300)
+pdf("Supplementary Figures/Supplementary_Figure_16B.pdf", width = 7, height = 7)
 dotplot(enrichmf, title = "GO Molecular Function")
 dev.off()
-png(filename = "Supplementary Figures/Supplementary_Figure_16C.png",
-    width = 7, height = 7, units = 'in', res = 300)
+pdf("Supplementary Figures/Supplementary_Figure_16C.pdf", width = 7, height = 7)
 dotplot(enrichcc, title = "GO Cellular Component")
 dev.off()
-png(filename = "Supplementary Figures/Supplementary_Figure_16D.png",
-    width = 7, height = 7, units = 'in', res = 300)
+pdf("Supplementary Figures/Supplementary_Figure_16D.pdf", width = 7, height = 7)
 dotplot(enrichkegg, title = "KEGG")
 dev.off()
