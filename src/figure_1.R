@@ -126,6 +126,8 @@ res_test_summary <- as.data.frame(res_test) %>%
     sd = as.numeric(sd(R, na.rm = TRUE)),
     mean = as.numeric(mean(R)),
     mean_mae = as.numeric(mean(MAE)),
+    q25 = quantile(R, 0.25, na.rm = TRUE),
+    q75 = quantile(R, 0.75, na.rm = TRUE),
     data = "Primary Tumour (Test)"
   )
 res_normal_summary <- as.data.frame(res_normal) %>%
@@ -134,6 +136,8 @@ res_normal_summary <- as.data.frame(res_normal) %>%
     sd = as.numeric(sd(R, na.rm = TRUE)),
     mean = as.numeric(mean(R)),
     mean_mae = as.numeric(mean(MAE)),
+    q25 = quantile(R, 0.25, na.rm = TRUE),
+    q75 = quantile(R, 0.75, na.rm = TRUE),
     data = "Normal Tissue"
   )
 res_tumor_summary <- as.data.frame(res_tumor) %>%
@@ -142,6 +146,8 @@ res_tumor_summary <- as.data.frame(res_tumor) %>%
     sd = as.numeric(sd(R, na.rm = TRUE)),
     mean = as.numeric(mean(R)),
     mean_mae = as.numeric(mean(MAE)),
+    q25 = quantile(R, 0.25, na.rm = TRUE),
+    q75 = quantile(R, 0.75, na.rm = TRUE),
     data = "Primary Tumour (Others)"
   )
 res <- rbind(res_test_summary, res_normal_summary, res_tumor_summary)
@@ -151,7 +157,7 @@ color_type <- c("Primary Tumour (Test)" = "steelblue1",
                 "Primary Tumour (Others)" = "blueviolet",
                 "Normal Tissue" = "chartreuse3")
 ggplot(res, aes(x = Perc_missing, y = mean,
-                ymin = mean-sd, ymax = mean+sd, fill = data, color = data)) +
+                ymin = q25, ymax = q75, fill = data, color = data)) +
   geom_line(linewidth = 1) +
   geom_errorbar(width = 0.02) +
   geom_point(shape=21, color="black", size=3) +
