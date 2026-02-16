@@ -309,12 +309,12 @@ gene_order <- c("TSS1500", "TSS200", "1stExon", "5'UTR", "Body", "3'UTR")
 combined_data$group <- factor(combined_data$group, levels = rev(gene_order))
 combined_data_sorted <- combined_data %>%
   arrange(group)
-pdf("Figures/Figure3C.pdf", width = 8, height = 5.4)
+pdf("Figures/Figure2C.pdf", width = 8, height = 5.4)
 ggplot(combined_data, aes(x = source, y = percentage, fill = group)) +
   geom_bar(stat = "identity") +
   scale_fill_manual(values = RColorBrewer::brewer.pal(length(gene_order), "Set2"),
                     breaks = gene_order,
-                    name = "") +
+                    name = "CpGs within annotated\ngene regions") +
   xlab("") + ylab("%CpGs") +
   coord_flip() +
   theme_minimal(base_size = 20) +
@@ -347,3 +347,4 @@ pheatmap(jsd_mat,
          border_color = "white",
          main = "Jensen-Shannon distance based on\nfunctional genomic annotation")
 dev.off()
+mean(jsd_mat[-2,2])
