@@ -459,3 +459,130 @@ dev.off()
 # min(kegg_cpgs_neg$FDR) # 1 - No significant results
 # min(kegg_cpgs_pos$FDR) # 0.2769831 - No significant results
 
+# Enrichment analysis other clocks
+dir_metadata <- "metadata/"
+load(paste0(dir_metadata, "HorvathS2013.rda"))
+horvath <- coefs
+load(paste0(dir_metadata, "HannumG2013.rda"))
+hannum <- coefs
+load(paste0(dir_metadata, "HorvathS2018.rda"))
+horvath2 <- coefs
+load(paste0(dir_metadata, "LevineM2018.rda"))
+levine <- coefs
+ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+ann_horvath <- as.data.frame(merge(ann, horvath, by.x = "row.names", by.y = "Probe"))
+ann_hannum <- as.data.frame(merge(ann, hannum, by.x = "row.names", by.y = "Probe"))
+ann_horvath2 <- as.data.frame(merge(ann, horvath2, by.x = "row.names", by.y = "Probe"))
+ann_levine <- as.data.frame(merge(ann, levine, by.x = "row.names", by.y = "Probe"))
+genes_horvath <- unique(unlist(strsplit(ann_horvath[ann_horvath$UCSC_RefGene_Name != "", "UCSC_RefGene_Name"], ";")))
+genes_hannum <- unique(unlist(strsplit(ann_hannum[ann_hannum$UCSC_RefGene_Name != "", "UCSC_RefGene_Name"], ";")))
+genes_horvath2 <- unique(unlist(strsplit(ann_horvath2[ann_horvath2$UCSC_RefGene_Name != "", "UCSC_RefGene_Name"], ";")))
+genes_levine <- unique(unlist(strsplit(ann_levine[ann_levine$UCSC_RefGene_Name != "", "UCSC_RefGene_Name"], ";")))
+enrichbp_horvath <- enrichGO(gene = genes_horvath,
+                     OrgDb = org.Hs.eg.db,
+                     keyType = "SYMBOL",
+                     ont = "BP")
+enrichbp_hannum <- enrichGO(gene = genes_hannum,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "BP")
+enrichbp_horvath2 <- enrichGO(gene = genes_horvath2,
+                            OrgDb = org.Hs.eg.db,
+                            keyType = "SYMBOL",
+                            ont = "BP")
+enrichbp_levine <- enrichGO(gene = genes_levine,
+                              OrgDb = org.Hs.eg.db,
+                              keyType = "SYMBOL",
+                              ont = "BP")
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichbp_horvath.pdf", width = 7, height = 7)
+dotplot(enrichbp_horvath, title = "GO Biological Process")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichbp_hannum.pdf", width = 7, height = 7)
+dotplot(enrichbp_hannum, title = "GO Biological Process")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichbp_horvath2.pdf", width = 7, height = 7)
+dotplot(enrichbp_horvath2, title = "GO Biological Process")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichbp_levine.pdf", width = 7, height = 7)
+dotplot(enrichbp_levine, title = "GO Biological Process")
+dev.off()
+enrichmf_horvath <- enrichGO(gene = genes_horvath,
+                     OrgDb = org.Hs.eg.db,
+                     keyType = "SYMBOL",
+                     ont = "MF")
+enrichmf_hannum <- enrichGO(gene = genes_hannum,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "MF")
+enrichmf_horvath2 <- enrichGO(gene = genes_horvath2,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "MF")
+enrichmf_levine <- enrichGO(gene = genes_levine,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "MF")
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichmf_horvath.pdf", width = 7, height = 7)
+dotplot(enrichmf_horvath, title = "GO Molecular Function")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichmf_hannum.pdf", width = 7, height = 7)
+dotplot(enrichmf_hannum, title = "GO Molecular Function")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichmf_horvath2.pdf", width = 7, height = 7)
+dotplot(enrichmf_horvath2, title = "GO Molecular Function")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichmf_levine.pdf", width = 7, height = 7)
+dotplot(enrichmf_levine, title = "GO Molecular Function")
+dev.off()
+enrichcc_horvath <- enrichGO(gene = genes_horvath,
+                     OrgDb = org.Hs.eg.db,
+                     keyType = "SYMBOL",
+                     ont = "CC")
+enrichcc_hannum <- enrichGO(gene = genes_hannum,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "CC")
+enrichcc_horvath2 <- enrichGO(gene = genes_horvath2,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "CC")
+enrichcc_levine <- enrichGO(gene = genes_levine,
+                             OrgDb = org.Hs.eg.db,
+                             keyType = "SYMBOL",
+                             ont = "CC")
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichcc_horvath.pdf", width = 7, height = 7)
+dotplot(enrichcc_horvath, title = "GO Cellular Component")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichcc_hannum.pdf", width = 7, height = 7)
+dotplot(enrichcc_hannum, title = "GO Cellular Component")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichcc_horvath2.pdf", width = 7, height = 7)
+dotplot(enrichcc_horvath2, title = "GO Cellular Component")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichcc_levine.pdf", width = 7, height = 7)
+dotplot(enrichcc_levine, title = "GO Cellular Component")
+dev.off()
+entrez_ids_horvath <- bitr(genes_horvath, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+enrichkegg_horvath <- enrichKEGG(gene = entrez_ids_horvath$ENTREZID,
+                         organism = "hsa")
+entrez_ids_hannum <- bitr(genes_hannum, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+enrichkegg_hannum <- enrichKEGG(gene = entrez_ids_hannum$ENTREZID,
+                                 organism = "hsa")
+entrez_ids_horvath2 <- bitr(genes_horvath2, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+enrichkegg_horvath2 <- enrichKEGG(gene = entrez_ids_horvath2$ENTREZID,
+                                 organism = "hsa")
+entrez_ids_levine <- bitr(genes_levine, fromType = "SYMBOL", toType = "ENTREZID", OrgDb = org.Hs.eg.db)
+enrichkegg_levine <- enrichKEGG(gene = entrez_ids_levine$ENTREZID,
+                                 organism = "hsa")
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichkegg_horvath.pdf", width = 7, height = 7)
+dotplot(enrichkegg_horvath, title = "KEGG")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichkegg_hannum.pdf", width = 7, height = 7)
+dotplot(enrichkegg_hannum, title = "KEGG")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichkegg_horvath2.pdf", width = 7, height = 7)
+dotplot(enrichkegg_horvath2, title = "KEGG")
+dev.off()
+pdf("/Volumes/iorio/Irene/epiclock/plots/enrichkegg_levine.pdf", width = 7, height = 7)
+dotplot(enrichkegg_levine, title = "KEGG")
+dev.off()
