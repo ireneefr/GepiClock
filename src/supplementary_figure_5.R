@@ -38,14 +38,14 @@ cpg_lists <- list('Horvath 2013' = horvath,
                   'Rebollo' = rebollo)
 cpg_data_upset <- fromList(cpg_lists)
 
-png("Supplementary Figures/Supplementary_Figure_5A.png",
-    width = 10, height = 6, units = "in", res = 600)
+pdf("Supplementary Figures/Supplementary_Figure_5A.pdf", width = 10, height = 6, onefile = FALSE)
+grid::grid.newpage() 
 upset(cpg_data_upset, order.by = "freq", nsets = 5,
       nintersects = 23,
       empty.intersections = "on",
       keep.order = TRUE,
       set_size.show = TRUE,
-      mainbar.y.label = "Intersection of CpGs",
+      mainbar.y.label = "Cardinality of predictive\nCpGs sets' intersections",
       sets.x.label = "CpG Coefficients", 
       set_size.scale_max = 6300,
       text.scale = c(1.75, 1.5, 1.5, 1.5, 1.75, 1.5))
@@ -58,14 +58,14 @@ gene_lists <- list('Horvath 2013' = gene_horvath,
                    'Rebollo' = gene_rebollo)
 gene_data_upset <- fromList(gene_lists)
 
-png("Supplementary Figures/Supplementary_Figure_5B.png",
-    width = 10, height = 6, units = "in", res = 600)
+pdf("Supplementary Figures/Supplementary_Figure_5B.pdf", width = 10, height = 6, onefile = FALSE)
+grid::grid.newpage() 
 upset(gene_data_upset, order.by = "freq", nsets = 5,
       nintersects = 23,
       empty.intersections = "on",
       keep.order = TRUE,
       set_size.show = TRUE,
-      mainbar.y.label = "Intersection of Genes",
+      mainbar.y.label = "Cardinality of predictive\nGenes sets' intersections",
       sets.x.label = "Genes", 
       set_size.scale_max = 6300,
       text.scale = c(1.75, 1.5, 1.5, 1.5, 1.75, 1.5))
