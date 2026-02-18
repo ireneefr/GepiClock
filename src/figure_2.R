@@ -2,7 +2,7 @@
 ###   Figure 3   ###
 ####################
 
-
+setwd("/Volumes/iorio/Irene/epiclock_dev/")
 source("src/utils.R")
 library(minfi)
 library(IlluminaHumanMethylation450kanno.ilmn12.hg19)
@@ -263,6 +263,7 @@ X <- df_wide %>%
   as.matrix() / 100
 rownames(X) <- df_wide$source
 jsd_mat <- jsd(X)
+jsd_mat_lower <- jsd_mat
 
 my_colors <- colorRampPalette(c("red3", "white"))(100)
 pdf("Supplementary Figures/Supplementary_Figure_17A.pdf", width = 5, height = 5)
@@ -335,6 +336,7 @@ X <- df_wide %>%
   as.matrix() / 100
 rownames(X) <- df_wide$source
 jsd_mat <- jsd(X)
+jsd_mat_upper <- jsd_mat
 
 my_colors <- colorRampPalette(c("red3", "white"))(100)
 pdf("Supplementary Figures/Supplementary_Figure_17B.pdf", width = 5, height = 5)
@@ -348,3 +350,125 @@ pheatmap(jsd_mat,
          main = "Jensen-Shannon distance based on\nfunctional genomic annotation")
 dev.off()
 mean(jsd_mat[-2,2])
+
+
+
+
+
+
+
+
+
+
+
+
+
+library(ComplexHeatmap)
+library(circlize)
+library(grid)
+
+m <- jsd_mat
+rownames(m) <- gsub("\n", " ", rownames(m))
+colnames(m) <- gsub("\n", " ", colnames(m))
+# two independent color mappings (adjust as you like)
+col_lower <- colorRamp2(c(0, max(jsd_mat_lower, na.rm=TRUE)), c("red3", "black"))
+col_upper <- colorRamp2(c(0, max(jsd_mat_upper, na.rm=TRUE)), c("blue3", "black"))
+
+ht <- Heatmap(
+  m,
+  cluster_rows = FALSE,
+  cluster_columns = FALSE,
+  show_heatmap_legend = FALSE,
+  column_names_rot = 0,
+  column_names_centered = TRUE,
+  column_names_side = "top",
+  row_names_side = "left",
+  layer_fun = function(j, i, x, y, w, h, fill) {
+    
+    v <- m[cbind(i, j)]
+    
+    # ---- LOWER triangle ----
+    selL <- i > j
+    if (any(selL)) {
+      fills <- col_lower(v[selL])
+      grid.rect(x[selL], y[selL], w[selL], h[selL],
+                gp = gpar(fill = fills, col = "white"))
+      
+      grid.text(sprintf("%.1e", v[selL]),
+                x[selL], y[selL],
+                gp = gpar(col = "white", fontsize = 10))
+    }
+    
+    # ---- UPPER triangle ----
+    selU <- i < j
+    if (any(selU)) {
+      fills <- col_upper(v[selU])
+      grid.rect(x[selU], y[selU], w[selU], h[selU],
+                gp = gpar(fill = fills, col = "white"))
+      
+      grid.text(sprintf("%.1e", v[selU]),
+                x[selU], y[selU],
+                gp = gpar(col = "white", fontsize = 10))
+    }
+    
+    # ---- DIAGONAL (black) ----
+    selD <- i == j
+    if (any(selD)) {
+      grid.rect(x[selD], y[selD], w[selD], h[selD],
+                gp = gpar(fill = "white", col = "white"))
+    }
+  }
+)
+
+
+# two separate legends (one per triangle)
+lgd_lower <- Legend(title = "Jensen-Shannon distance based on\nannotated gene regions",
+                    col_fun = col_lower, direction = "horizontal", title_position = "topcenter")
+lgd_upper <- Legend(title = "Jensen-Shannon distance based on\nfunctional genomic annotation",
+                    col_fun = col_upper, direction = "horizontal", title_position = "topcenter")
+
+pdf("Supplementary Figures/Supplementary_Figure_17A.pdf", width = 9, height = 7)
+# Leave space: top = 12mm, bottom = 12mm
+pushViewport(viewport(
+  y = unit(0.5, "npc"),
+  height = unit(1, "npc") - unit(40, "mm"),  # 12mm top + 12mm bottom
+  just = "center"
+))
+draw(ht, show_heatmap_legend = FALSE, show_annotation_legend = FALSE, newpage = FALSE,
+     padding = unit(c(4, 4, 4, 4), "mm"))
+popViewport()
+y_pos <- unit(1, "mm")
+
+# shift distance from center
+x_shift <- unit(4, "cm")
+
+# Lower legend (left of center)
+draw(lgd_lower,
+     x = unit(0.55, "npc") - x_shift,
+     y = y_pos,
+     just = c("center", "bottom"))
+
+# Upper legend (right of center)
+draw(lgd_upper,
+     x = unit(0.55, "npc") + x_shift,
+     y = y_pos,
+     just = c("center", "bottom"))
+dev.off() 
+
+
+
+# Plot distributions
+vals_lower <- data.frame(jsd = jsd_mat_lower[upper.tri(jsd_mat_lower)])
+vals_upper <- data.frame(jsd = jsd_mat_upper[upper.tri(jsd_mat_upper)])
+pdf("Supplementary Figures/Supplementary_Figure_17B.pdf", width = 6, height = 4)
+ggplot(vals_upper, aes(x = jsd)) +
+  geom_density(color = "blue3", linewidth = 1, fill = "blue3", alpha = 0.3) +
+  xlab("Jensen-Shannon distance based on\nfunctional genomic annotation") +
+  theme_minimal(base_size = 15)
+dev.off()
+pdf("Supplementary Figures/Supplementary_Figure_17C.pdf", width = 6, height = 4)
+ggplot(vals_lower, aes(x = jsd)) +
+  geom_density(color = "red3", linewidth = 1, fill = "red3", alpha = 0.3) +
+  xlab("Jensen-Shannon distance based on\nannotated gene regions") +
+  theme_minimal(base_size = 15)
+dev.off()
