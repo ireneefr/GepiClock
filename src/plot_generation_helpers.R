@@ -169,6 +169,107 @@ plot_sample_categories_pan_drug <- function(GDSC_age, thresh_number, output_dir)
 
 
 
+# predicted age - age at sampling Pearson correlation scatterplot (square panel) with compact legend on the right
+plot_age_scatter_with_compact_legend <- function(df,
+                                                output_path,
+                                                x_col = "age_at_sampling",
+                                                y_col = "age_prediction",
+                                                color_col = "cancer_type",
+                                                legend_position = "right",
+                                                legend_ncol = 4,
+                                                point_size = 2.5,
+                                                point_alpha = 0.8,
+                                                base_size = 30,
+                                                axis_text_size = 20,
+                                                axis_title_size = 26,
+                                                legend_title_size = 14,
+                                                legend_text_size = 10,
+                                                legend_key_size = 0.45,
+                                                stats_text_size = 8,
+                                                width = 16,
+                                                height = 8,
+                                                dpi = 1200) {
+
+  ok <- !is.na(df[[x_col]]) & !is.na(df[[y_col]]) & !is.na(df[[color_col]])
+  d <- df[ok, , drop = FALSE]
+
+  # Pearson correlation
+  ct <- suppressWarnings(cor.test(d[[x_col]], d[[y_col]], method = "pearson"))
+  N <- nrow(d)
+  R <- unname(ct$estimate)
+  pval <- ct$p.value
+
+  x_max <- max(d[[x_col]], na.rm = TRUE)
+  y_max <- max(d[[y_col]], na.rm = TRUE)
+
+  x_min <- min(d[[x_col]], na.rm = TRUE)
+  y_min <- min(d[[y_col]], na.rm = TRUE)
+
+  # small offset so the text is not glued to the axes
+  x_range <- diff(range(d[[x_col]], na.rm = TRUE))
+  y_range <- diff(range(d[[y_col]], na.rm = TRUE))
+
+  # plot
+  p <- ggplot(d, aes(x = .data[[x_col]], y = .data[[y_col]], color = .data[[color_col]])) +
+    geom_point(size = point_size, alpha = point_alpha) +
+    geom_smooth(method = "lm", se = TRUE, color = "black", linewidth = 1.2) +
+    theme_minimal(base_size = base_size) +
+    labs(
+      x = "Age at sampling",
+      y = "Predicted age",
+      color = "Cancer type"
+    ) +
+    theme(
+      aspect.ratio = 1,
+      panel.border = element_rect(color = "black", fill = NA, size = 1.1),
+      panel.grid.major = element_line(color = "gray85"),
+      panel.grid.minor = element_blank(),
+
+      axis.text.x  = element_text(size = axis_text_size),
+      axis.text.y  = element_text(size = axis_text_size),
+      axis.title.x = element_text(size = axis_title_size),
+      axis.title.y = element_text(size = axis_title_size),
+
+      # Compact legend so it fits (right side)
+      legend.position = legend_position,
+      legend.title = element_text(size = legend_title_size),
+      legend.text  = element_text(size = legend_text_size),
+      legend.key.size = unit(legend_key_size, "lines"),
+      legend.box.margin = margin(t = 2, r = 2, b = 2, l = 2),
+      legend.spacing.x = unit(0.15, "cm"),
+      legend.spacing.y = unit(0.10, "cm")
+    ) +
+    guides(color = guide_legend(ncol = legend_ncol, byrow = TRUE)) +
+    scale_color_manual(values = cancer_colors) +
+    coord_fixed() +
+    annotate(
+      "text",
+      x = x_min + 0.03 * x_range,
+      y = y_min + 0.03 * y_range,
+      hjust = 0,
+      vjust = 0,
+      size = stats_text_size,
+      label = paste0(
+        "N = ", N, "\n",
+        "R = ", sprintf("%.3f", R), "\n",
+        "p.val = ", format(pval, scientific = TRUE, digits = 2)
+      )
+    )
+
+  ggsave(
+    filename = output_path,
+    plot = p,
+    width = width,
+    height = height,
+    device = cairo_pdf
+  )
+
+  return(p)
+}
+
+
+
+
 # plot included tissue samples - ANOVA DRUG PAN
 plot_included_tissue_pan_drug <- function(GDSC_age_unique) {
   filtered_data <- GDSC_age_unique %>%
@@ -493,9 +594,16 @@ plot_predage_LNIC50_cumulative_correlation_cancer_specific_drug <- function(cumu
 
 
 # volcano plot for selected cancer types 
-plot_cancer_specific_volcano <- function(cumulative_correlation_results, selected_cancer_types, output_dir) {
-  filtered_data <- cumulative_correlation_results %>%
-    filter(cancer_type %in% selected_cancer_types)
+plot_cancer_specific_volcano <- function(cumulative_correlation_results, selected_cancer_types = NULL, output_dir) {
+  
+  # if selected_cancer_types is not provided, plot all cancer types
+  if (is.null(selected_cancer_types)) {
+    filtered_data <- cumulative_correlation_results %>%
+      filter(!is.na(cancer_type))
+  } else {
+    filtered_data <- cumulative_correlation_results %>%
+      filter(cancer_type %in% selected_cancer_types)
+  }
   
   volcano_plot <- ggplot(filtered_data, aes(x = correlation, y = -log10(adj_p_value), color = cancer_type)) +
     geom_point(size = 3, alpha = 0.7) +
@@ -578,7 +686,7 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, ou
           labs(
             title = paste(drug),
             x = "Predicted Age",
-            y = "LN_IC50"
+            y = "LN(IC50)"
           ) +
           annotate(
             geom = "text",
@@ -621,86 +729,92 @@ ggsave(
 
 
 
-# dotplot for cancer specific DSEA results, using clustering from MutExMatSorting and coloring pathways  
-# based on enrichment in young or old predicted groups.  
-dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) {   
-  library(MutExMatSorting)   
-  library(reshape2)       
-  
-  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")     
-  
-  # classification column   
-  significant_results <- significant_results %>%     
+# dotplot for cancer specific DSEA results, using clustering from MutExMatSorting and coloring pathways
+# based on enrichment in young or old predicted groups.
+dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) {
+  library(MutExMatSorting)
+  library(reshape2)
+
+  color_palette <- c("Negative" = "#4C72B0", "Positive" = "#E69F00")
+
+  # classification column
+  significant_results <- significant_results %>%
     mutate(
       NES_category = ifelse(NES > 0, "Positive", "Negative"),
-      NES_category = trimws(NES_category) # remove spaces 
-    )  
-  
+      NES_category = trimws(NES_category) # remove spaces
+    )
+
   # print unique values of NES_category to check
   print("Unique NES categories:")
   print(unique(significant_results$NES_category))
-  
-  # reshape the data for clustering   
-  nes_matrix <- acast(significant_results, pathway ~ acronyms_cancer_type, value.var = "NES", fill = 0)   
-  nes_matrix <- abs(nes_matrix)  # make all values absolute    
-  
-  # apply clustering using MutExMatSorting:
-  # The MutExMatSorting algorithm was used to reorder pathways (rows) and cancer types (columns) 
-  # in a way that minimizes overlap among signals. This highlights patterns of mutual exclusivity 
-  # or co-occurrence across cancer types, making it easier to identify enriched pathways that 
-  # are specific to certain cancer types. This heuristic approach optimizes the visualization 
-  # by grouping similar patterns together without forcing predefined clusters. 
-  sort_result <- MExMaS.MEMo(     
-    nes_matrix,     
-    display = TRUE,     
-    cluster_cols = FALSE,     
-    legend = TRUE,     
-    show_rownames = TRUE,     
-    show_colnames = TRUE,     
-    col = c('white', 'red')   
-  )       
-  
-  # extract ordered row and column names   
-  row_order <- rev(rownames(sort_result))   
-  col_order <- colnames(sort_result)       
-  
-  # update factor levels to apply sorting   
-  significant_results$pathway <- factor(significant_results$pathway, levels = row_order)   
-  significant_results$acronyms_cancer_type <- factor(significant_results$acronyms_cancer_type, levels = col_order)       
-  
-  # sort data accordingly   
-  significant_results <- significant_results[order(significant_results$pathway, significant_results$acronyms_cancer_type), ]       
-  
-  # dotplot   
-  dsea_dotplot <- ggplot(significant_results, aes(x = acronyms_cancer_type, y = pathway, size = abs(NES), color = NES_category)) +     
-    geom_point(alpha = 0.8) +     
-    scale_size(range = c(3, 10), name = "NES (absolute)") +     
-    scale_color_manual(
-      values = color_palette, 
-      name = "cor(pred_age, IC50)", 
-      breaks = c("Positive", "Negative")
-    ) +     
-    theme_minimal() +     
-    labs(       
-      title = title,       
-      x = NULL,       
-      y = NULL     
-    ) +     
-    theme_minimal(base_size = 20) +     
-    theme(       
-      panel.border = element_rect(color = "black", fill = NA, size = 1.5),       
-      axis.text.x = element_text(angle = 45, size = 16, hjust = 0.7),       
-      axis.text.y = element_text(size = 16),       
-      legend.title = element_text(size = 16),       
-      legend.text = element_text(size = 16)     
-    ) +     
-    guides(color = guide_legend(override.aes = list(size = 8)))       
-  
-  ggsave(output_dir, plot = dsea_dotplot, width = 12, height = 8, dpi = 600)       
-  
-  return(dsea_dotplot) 
-}
 
+  # reshape the data for clustering
+  nes_matrix <- acast(significant_results, pathway ~ cancer_type, value.var = "NES", fill = 0)
+  nes_matrix <- abs(nes_matrix)  # make all values absolute
+
+  # apply clustering using MutExMatSorting:
+  # The MutExMatSorting algorithm was used to reorder pathways (rows) and cancer types (columns)
+  # in a way that minimizes overlap among signals. This highlights patterns of mutual exclusivity
+  # or co-occurrence across cancer types, making it easier to identify enriched pathways that
+  # are specific to certain cancer types. This heuristic approach optimizes the visualization
+  # by grouping similar patterns together without forcing predefined clusters.
+  sort_result <- MExMaS.MEMo(
+    nes_matrix,
+    display = TRUE,
+    cluster_cols = FALSE,
+    legend = TRUE,
+    show_rownames = TRUE,
+    show_colnames = TRUE,
+    col = c('white', 'red')
+  )
+
+  # extract ordered row and column names
+  row_order <- rev(rownames(sort_result))
+  col_order <- colnames(sort_result)
+
+  # update factor levels to apply sorting
+  significant_results$pathway <- factor(significant_results$pathway, levels = row_order)
+  significant_results$cancer_type <- factor(significant_results$cancer_type, levels = col_order)
+
+  # sort data accordingly
+  significant_results <- significant_results[order(significant_results$pathway, significant_results$cancer_type), ]
+
+  # dotplot
+  dsea_dotplot <- ggplot(significant_results, aes(x = cancer_type, y = pathway, size = abs(NES), color = NES_category)) +
+    geom_point(alpha = 0.8) +
+    scale_size(range = c(3, 10), name = "NES (absolute)") +
+    scale_color_manual(
+      values = color_palette,
+      name = "cor(pred_age, IC50)",
+      breaks = c("Positive", "Negative")
+    ) +
+    theme_minimal() +
+    labs(
+      title = title,
+      x = NULL,
+      y = NULL
+    ) +
+    theme_minimal(base_size = 20) +
+    theme(
+      panel.border = element_rect(color = "black", fill = NA, size = 1.5),
+
+      # long cancer type labels (avoid overlapping and clipping)
+      axis.text.x = element_text(angle = 60, size = 14, hjust = 1, vjust = 1),
+      axis.text.y = element_text(size = 16),
+
+      # add extra bottom margin so labels stay below the plot
+      plot.margin = margin(t = 10, r = 10, b = 90, l = 10),
+
+      legend.title = element_text(size = 16),
+      legend.text = element_text(size = 16)
+    ) +
+    coord_cartesian(clip = "off") +
+    guides(color = guide_legend(override.aes = list(size = 8)))
+
+  ggsave(output_dir, plot = dsea_dotplot, width = 12, height = 10, dpi = 600)
+
+  return(dsea_dotplot)
+}
 
 
 
@@ -847,7 +961,7 @@ GSEA_yo_dotplot <- function(gsea_result, title, output_filename) {
     ) +
     guides(
       color = guide_legend(override.aes = list(size = 10)),
-      size = guide_legend(override.aes = list(size = 10))
+      # size  = guide_legend()
     )  
   
   output_path <- paste0(figures_path, output_filename)
@@ -978,9 +1092,16 @@ plot_predage_geneDep_cumulative_correlation_cancer_specific <- function(cumulati
 
 
 # volcano plot for selected cancer types
-plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results, selected_cancer_types, output_dir) {  
-  filtered_data <- cumulative_correlation_results %>%
-    filter(cancer_type %in% selected_cancer_types)  
+plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results, selected_cancer_types = NULL, output_dir) {  
+  
+  # if selected_cancer_types is not provided, plot all cancer types
+  if (is.null(selected_cancer_types)) {
+    filtered_data <- cumulative_correlation_results %>%
+      filter(!is.na(cancer_type))
+  } else {
+    filtered_data <- cumulative_correlation_results %>%
+      filter(cancer_type %in% selected_cancer_types)
+  }
   
   volcano_plot <- ggplot(filtered_data, aes(x = correlation, y = -log10(adj_p_value), color = cancer_type)) +
     geom_point(size = 3, alpha = 0.7) +
@@ -1005,7 +1126,6 @@ plot_cancer_specific_geneDep_volcano <- function(cumulative_correlation_results,
   
   return(volcano_plot)  
 }
-
 
 
 

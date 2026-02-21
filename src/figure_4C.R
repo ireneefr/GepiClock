@@ -38,11 +38,11 @@ significant_drugs_list <- extract_significant_drugs(cancer_specific_anova_result
 print(significant_drugs_list)
 
 # plot volcano plots highlighting significant drug-age correlations in these cancer types
-plot_cancer_specific_volcano(cumulative_correlation_results, c("Bladder Carcinoma",
-                                                               
-                                                               "Head and Neck Carcinoma",
-                                                               "Oral Cavity Carcinoma"),
-                             output_dir = "Figures/Figure4C1.pdf")
+plot_cancer_specific_volcano(
+  cumulative_correlation_results = cumulative_correlation_results,
+  selected_cancer_types = NULL, # displays all the cancer types without selecting them
+  output_dir = "Figures/Figure4C1.pdf"
+)
 
 # individual correlation plots for statistically significant drugs
 plot_significant_drugs(GDSC_age_filtered, significant_drugs_list,

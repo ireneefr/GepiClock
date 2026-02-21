@@ -45,11 +45,11 @@ cumulative_correlation_results_geneDep <- read_xlsx(paste0(results_path,
 # extract list of significant genes per cancer type
 significant_genes_list <- extract_significant_genes(cancer_specific_gene_anova_results)
 # plot volcano plot for selected cancer types
-plot_cancer_specific_geneDep_volcano(cumulative_correlation_results_geneDep, 
-                                     c("Acute Myeloid Leukemia", 
-                                       "Bladder Carcinoma", 
-                                       "Other Solid Cancers"),
-                                     output_dir = "Figures/Figure5B1.pdf" )
+plot_cancer_specific_geneDep_volcano(
+  cumulative_correlation_results = cumulative_correlation_results_geneDep,
+  selected_cancer_types = NULL, # displays all the cancer types
+  output_dir = "Figures/Figure5B1.pdf"
+)
 
 # individual correlation plots for statistically significant genes
 plot_significant_genes(gene_dep_age_filtered, significant_genes_list,

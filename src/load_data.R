@@ -60,6 +60,20 @@ cl_samples_with_age_at_sampling <- cl_samples[!is.na(cl_samples$age_at_sampling)
 print((paste("The total number of samples is", nrow(cl_samples), ",while the number of samples with annotated 'age at sampling' is",
              nrow(cl_samples_with_age_at_sampling))))
 
+# Save a CSV comparing annotated age at sampling vs predicted age for cell lines
+df_out <- data.frame(
+  sample_id       = rownames(cl_samples_with_age_at_sampling),
+  cancer_type     = cl_samples_with_age_at_sampling$cancer_type,
+  age_at_sampling = cl_samples_with_age_at_sampling$age_at_sampling,
+  age_prediction  = cl_samples_with_age_at_sampling$age_prediction,
+  stringsAsFactors = FALSE
+)
+ write.csv(
+  df_out,
+  file = paste0(results_path, "cell_lines/predictions/cls_age_at_sampling_vs_age_prediction.csv"),
+  row.names = FALSE
+)
+
 # ==================================================
 # CELL LINES' DRUG RESPONSE DATA (GDSC)
 # ==================================================
