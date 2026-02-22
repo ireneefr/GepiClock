@@ -34,7 +34,7 @@ cumulative_correlation_results<- read_xlsx(paste0(results_path,
 cancer_specific_anova_results <- anova_drugresponse_cancer_specific(GDSC_age_filtered, "age_prediction")
 
 # extract list of significant drugs per cancer type
-significant_drugs_list <- extract_significant_drugs(cancer_specific_anova_results)
+significant_drugs_list <- extract_significant_drugs(cancer_specific_anova_results, GDSC_age_filtered)
 print(significant_drugs_list)
 
 # plot volcano plots highlighting significant drug-age correlations in these cancer types

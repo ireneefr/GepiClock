@@ -526,8 +526,16 @@ summarize_significant_drugs <- function(anova_results,
 ############ extract_significant_drugs() ###################
 # The 'extract_significant_drugs' function extracts the significant drugs per cancer type
 # including their adjusted p-values and correlations
-extract_significant_drugs <- function(anova_results) {
+extract_significant_drugs <- function(anova_results, GDSC_age_filtered) {
   significant_drugs_list <- list()
+  
+  # map putative targets per cancer type and drug (collapse multiple targets if present)
+  drug_targets_map <- GDSC_age_filtered %>%
+    dplyr::select(cancer_type, DRUG_NAME, PUTATIVE_TARGET) %>%
+    dplyr::distinct() %>%
+    dplyr::group_by(cancer_type, DRUG_NAME) %>%
+    dplyr::summarise(PUTATIVE_TARGET = paste(unique(PUTATIVE_TARGET), collapse = ", "),
+                     .groups = "drop")
   
   # retrieve significant drugs from ANOVA results
   for (cancer_type in names(anova_results$anova_results)) {
@@ -537,9 +545,17 @@ extract_significant_drugs <- function(anova_results) {
       drug_list <- list()
       for (i in seq_len(nrow(significant_drugs))) {
         drug_name <- significant_drugs$DRUG_NAME[i]
+        
+        # retrieve putative target for the current cancer type and drug
+        put_target <- drug_targets_map %>%
+          dplyr::filter(cancer_type == !!cancer_type, DRUG_NAME == !!drug_name) %>%
+          dplyr::pull(PUTATIVE_TARGET)
+        if (length(put_target) == 0) put_target <- NA_character_
+        
         drug_list[[drug_name]] <- list(
           adj_p_value = significant_drugs$adj_p_value[i],
-          correlation = significant_drugs$correlation[i]
+          correlation = significant_drugs$correlation[i],
+          PUTATIVE_TARGET = put_target
         )
       }
       significant_drugs_list[[cancer_type]] <- drug_list
@@ -554,9 +570,17 @@ extract_significant_drugs <- function(anova_results) {
       drug_list <- list()
       for (i in seq_len(nrow(significant_drugs))) {
         drug_name <- significant_drugs$DRUG_NAME[i]
+        
+        # retrieve putative target for the current cancer type and drug
+        put_target <- drug_targets_map %>%
+          dplyr::filter(cancer_type == !!cancer_type, DRUG_NAME == !!drug_name) %>%
+          dplyr::pull(PUTATIVE_TARGET)
+        if (length(put_target) == 0) put_target <- NA_character_
+        
         drug_list[[drug_name]] <- list(
           adj_p_value = significant_drugs$adj_p_value[i],  
-          correlation = significant_drugs$correlation[i]
+          correlation = significant_drugs$correlation[i],
+          PUTATIVE_TARGET = put_target
         )
       }
       significant_drugs_list[[cancer_type]] <- drug_list
@@ -566,7 +590,6 @@ extract_significant_drugs <- function(anova_results) {
   print(significant_drugs_list)  
   return(significant_drugs_list)
 }
-
 
 
 

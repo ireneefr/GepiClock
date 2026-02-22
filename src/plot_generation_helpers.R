@@ -528,6 +528,160 @@ plot_target_drug_distribution <- function(significant_results_DSEA_df, ordered_t
 
 
 
+############ plot_dsea_top_enrichment_plots() ###################
+# The 'plot_dsea_top_enrichment_plots' function generates GSEA-like enrichment plots (fgsea::plotEnrichment)
+# for the top hits (top_n positive NES and top_n negative NES) using precomputed DSEA results.
+plot_dsea_top_enrichment_plots <- function(dsea_results_df,
+                                          correlation_results_df,
+                                          GDSC_age_res,
+                                          output_path,
+                                          top_n = 2,
+                                          minSize = 5,
+                                          combine = FALSE,
+                                          ncol = 2,
+                                          width = 14,
+                                          height = 10,
+                                          base_size = 22,
+                                          title_size = 24,
+                                          subtitle_size = 16,
+                                          axis_title_size = 18,
+                                          axis_text_size = 16,
+                                          line_width = 2.0) {
+  
+  # libraries
+  library(dplyr)
+  library(tidyr)
+  library(fgsea)
+  library(ggplot2)
+  
+  # optional for combining plots (not recommended here; combine=FALSE is robust)
+  if (combine) {
+    if (!requireNamespace("cowplot", quietly = TRUE)) {
+      stop("Package 'cowplot' is required for combine=TRUE. Install it or set combine=FALSE.")
+    }
+  }
+  
+  # build ranked stats vector (named numeric vector)
+  ranked_drugs <- correlation_results_df %>%
+    filter(!is.na(DRUG_NAME), !is.na(correlation)) %>%
+    arrange(desc(correlation))
+  
+  rankings_drugs <- setNames(ranked_drugs$correlation, ranked_drugs$DRUG_NAME)
+  
+  # build drug sets from PUTATIVE_TARGET (same logic as in run_dsea_pan_cancer)
+  drug_targets <- GDSC_age_res %>%
+    select(DRUG_NAME, PUTATIVE_TARGET) %>%
+    distinct() %>%
+    separate_rows(PUTATIVE_TARGET, sep = ",\\s*") %>%
+    filter(!is.na(PUTATIVE_TARGET), PUTATIVE_TARGET != "") %>%
+    distinct(DRUG_NAME, PUTATIVE_TARGET)
+  
+  drug_sets <- split(drug_targets$DRUG_NAME, drug_targets$PUTATIVE_TARGET)
+  
+  # select top hits from precomputed DSEA results
+  dsea_results_df <- as.data.frame(dsea_results_df) %>%
+    filter(!is.na(pathway), !is.na(NES), !is.na(padj))
+  
+  top_pos <- dsea_results_df %>%
+    filter(NES > 0) %>%
+    arrange(desc(NES)) %>%
+    slice(1:top_n)
+  
+  top_neg <- dsea_results_df %>%
+    filter(NES < 0) %>%
+    arrange(NES) %>%           # most negative first
+    slice(1:top_n)
+  
+  selected <- bind_rows(top_pos, top_neg)
+  selected_pathways <- selected$pathway
+  
+  # generate enrichment plots
+  plot_list <- list()
+  
+  for (pw in selected_pathways) {
+    if (!pw %in% names(drug_sets)) {
+      message(paste("Skipping pathway not found in drug_sets:", pw))
+      next
+    }
+    
+    # enforce minSize (consistent with fgsea usage)
+    pw_drugs <- intersect(unique(drug_sets[[pw]]), names(rankings_drugs))
+    if (length(pw_drugs) < minSize) {
+      message(paste("Skipping pathway (below minSize after intersection):", pw))
+      next
+    }
+    
+    # retrieve NES/padj for title annotation
+    row_pw <- selected %>% filter(pathway == pw) %>% slice(1)
+    nes_val <- row_pw$NES
+    padj_val <- row_pw$padj
+    
+    # build base plot from fgsea
+    p0 <- fgsea::plotEnrichment(pw_drugs, rankings_drugs)
+    
+    # extract the running ES curve data in a robust way
+    built <- ggplot_build(p0)
+    es_df <- built$data[[1]]  # first layer = running enrichment curve
+    if (!all(c("x", "y") %in% colnames(es_df))) {
+      message(paste("Skipping (could not extract ES curve data):", pw))
+      next
+    }
+    
+    # make the running ES curve thicker by over-plotting it
+    p <- p0 +
+      geom_line(
+        data = es_df,
+        aes(x = x, y = y),
+        inherit.aes = FALSE,
+        linewidth = line_width,
+        colour = "green"
+      ) +
+      labs(
+        title = pw,
+        subtitle = paste0("NES = ", round(nes_val, 3), " | padj = ", signif(padj_val, 3))
+      ) +
+      theme_minimal(base_size = base_size) +
+      theme(
+        plot.title = element_text(size = title_size),
+        plot.subtitle = element_text(size = subtitle_size),
+        axis.title.x = element_text(size = axis_title_size),
+        axis.title.y = element_text(size = axis_title_size),
+        axis.text.x = element_text(size = axis_text_size),
+        axis.text.y = element_text(size = axis_text_size)
+      )
+    
+    plot_list[[pw]] <- p
+  }
+  
+  if (length(plot_list) == 0) {
+    stop("No enrichment plots were generated (check inputs / minSize / pathway names).")
+  }
+  
+  # save output
+  if (combine) {
+    combined <- cowplot::plot_grid(plotlist = plot_list, ncol = ncol, align = "hv")
+    ggsave(output_path, plot = combined, width = width, height = height)
+    return(combined)
+  } else {
+    # save one PDF per pathway (output_path used as a prefix folder/file stem)
+    out_dir <- dirname(output_path)
+    prefix <- tools::file_path_sans_ext(basename(output_path))
+    ext <- tools::file_ext(output_path)
+    if (ext == "") ext <- "pdf"
+    
+    for (nm in names(plot_list)) {
+      safe_nm <- gsub("[^A-Za-z0-9_\\-]+", "_", nm)
+      out_file <- file.path(out_dir, paste0(prefix, "_", safe_nm, ".", ext))
+      ggsave(out_file, plot = plot_list[[nm]], width = width, height = height)
+    }
+    return(plot_list)
+  }
+}
+
+
+
+
+
 
 # bar plot showing the number of unique cancer-specific cell lines, grouped by MSI status - ANOVA DRUG CANCER SPECIFIC
 plot_sample_categories_cancer_specific_drug <- function(GDSC_age_included, output_dir) {
@@ -642,6 +796,55 @@ plot_cancer_specific_volcano <- function(cumulative_correlation_results, selecte
 # each plot corresponds to a cell line for the analyzed cancer type.
 plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, output_dir) {
   
+  wrap_every_n_words <- function(x, n = 5) {
+    if (is.null(x) || length(x) == 0 || is.na(x)) return("NA")
+    x <- as.character(x)
+    
+    # remove target item "others" (comma-separated items)
+    items <- unlist(strsplit(x, ","))
+    items <- trimws(items)
+    items <- items[tolower(items) != "others"]
+    x <- paste(items, collapse = ", ")
+    if (nchar(trimws(x)) == 0) return("NA")
+    
+    # for counting: treat "word number" as one token (e.g. "class 1" -> "class_1")
+    x_count <- gsub("([A-Za-z]+)\\s+([0-9]+)", "\\1_\\2", x)
+    
+    # remove parentheses from counting only (they should not affect word count)
+    x_count <- gsub("[()]", "", x_count)
+    
+    # split into tokens for counting
+    tokens <- unlist(strsplit(x_count, "\\s+"))
+    tokens <- tokens[tokens != ""]
+    
+    # standalone numbers do not count
+    countable <- tokens[!grepl("^[0-9]+$", tokens)]
+    
+    # if <= n, keep on one line and restore formatting ("class_1" -> "class 1")
+    if (length(countable) <= n) {
+      return(gsub("_", " ", x))
+    }
+    
+    # wrap by n countable words
+    lines <- c()
+    i <- 1
+    while (i <= length(tokens)) {
+      cur <- c()
+      cur_count <- 0
+      while (i <= length(tokens) && cur_count < n) {
+        tok <- tokens[i]
+        cur <- c(cur, tok)
+        if (!grepl("^[0-9]+$", tok)) cur_count <- cur_count + 1
+        i <- i + 1
+      }
+      lines <- c(lines, paste(cur, collapse = " "))
+    }
+    
+    # restore underscores back to spaces in output
+    out <- gsub("_", " ", paste(lines, collapse = "\n"))
+    return(out)
+  }
+  
   for (cancer_type in names(significant_drugs_list)) {
     
     # filter data for the specific cancer type
@@ -658,6 +861,17 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, ou
         correlation_value <- significant_drugs_list[[cancer_type]][[drug]]$correlation
         adj_p_value <- significant_drugs_list[[cancer_type]][[drug]]$adj_p_value
         
+        # get putative target from significant_drugs_list
+        putative_target <- significant_drugs_list[[cancer_type]][[drug]]$PUTATIVE_TARGET
+
+        # replace missing/placeholder targets with a clear message
+        if (is.null(putative_target) || length(putative_target) == 0 || is.na(putative_target) ||
+            toupper(trimws(as.character(putative_target))) %in% c("NA", "N/A", "NAE")) {
+          putative_target <- "No putative target annotated"
+        }
+
+        putative_target <- wrap_every_n_words(putative_target, n = 5)
+
         # retrieve color for the specific cancer type (defined globally)
         cancer_color <- cancer_colors[[cancer_type]]
         
@@ -684,7 +898,7 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, ou
           geom_hline(yintercept = min_conc_global, linetype = "dashed", color = "blue", size = 1) +
           theme_minimal(base_size = 30) +
           labs(
-            title = paste(drug),
+            title = paste0(drug, "\n(", putative_target, ")"),
             x = "Predicted Age",
             y = "LN(IC50)"
           ) +
@@ -706,17 +920,17 @@ plot_significant_drugs <- function(GDSC_age_filtered, significant_drugs_list, ou
           )
         
         # file path
-file_path <- file.path(output_dir, paste0("Figure4C_drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".pdf"))
-print(file_path)  # This will print the file path, check if it's correct.
-
-# save 
-ggsave(
-  filename = file_path,
-  plot = drug_plot,
-  width = 10,
-  height = 8,
-  dpi = 600
-)
+        file_path <- file.path(output_dir, paste0("Figure4C_drug_", gsub(" ", "_", drug), "_", gsub(" ", "_", cancer_type), ".pdf"))
+        print(file_path)  # This will print the file path, check if it's correct.
+        
+        # save 
+        ggsave(
+          filename = file_path,
+          plot = drug_plot,
+          width = 10,
+          height = 8,
+          dpi = 600
+        )
         
       } else {
         print(paste("No data available for", drug, "in", cancer_type))
@@ -724,7 +938,6 @@ ggsave(
     }
   }
 }
-
 
 
 
@@ -816,6 +1029,161 @@ dsea_cancerspecific_dotplot <- function(significant_results, title, output_dir) 
   return(dsea_dotplot)
 }
 
+############ plot_dsea_top_enrichment_plots_cancerspecific() ###################
+# The 'plot_dsea_top_enrichment_plots_cancerspecific' function generates GSEA-like enrichment plots (fgsea::plotEnrichment)
+# for the top hits (top_n positive NES and top_n negative NES) across cancer-type-specific DSEA results.
+plot_dsea_top_enrichment_plots_cancerspecific <- function(dsea_results_df,
+                                                         correlation_results_df,
+                                                         GDSC_age_res,
+                                                         output_path,
+                                                         top_n = 2,
+                                                         minSize = 5,
+                                                         cancer_col = "cancer_type",
+                                                         pathway_col = "pathway",
+                                                         drug_col = "DRUG_NAME",
+                                                         target_col = "PUTATIVE_TARGET",
+                                                         NES_col = "NES",
+                                                         padj_col = "padj",
+                                                         width = 14,
+                                                         height = 10,
+                                                         base_size = 22,
+                                                         title_size = 24,
+                                                         subtitle_size = 16,
+                                                         axis_title_size = 18,
+                                                         axis_text_size = 16,
+                                                         line_width = 2.0) {
+  
+  # libraries
+  library(dplyr)
+  library(tidyr)
+  library(fgsea)
+  library(ggplot2)
+  
+  # select top hits from precomputed DSEA results (cancer_type + pathway pairs)
+  dsea_results_df <- as.data.frame(dsea_results_df) %>%
+    filter(!is.na(.data[[cancer_col]]),
+           !is.na(.data[[pathway_col]]),
+           !is.na(.data[[NES_col]]),
+           !is.na(.data[[padj_col]]))
+  
+  top_pos <- dsea_results_df %>%
+    filter(.data[[NES_col]] > 0) %>%
+    arrange(desc(.data[[NES_col]])) %>%
+    slice(1:top_n)
+  
+  top_neg <- dsea_results_df %>%
+    filter(.data[[NES_col]] < 0) %>%
+    arrange(.data[[NES_col]]) %>%   # most negative first
+    slice(1:top_n)
+  
+  selected <- bind_rows(top_pos, top_neg)
+  
+  # generate enrichment plots
+  plot_list <- list()
+  
+  for (i in seq_len(nrow(selected))) {
+    ct <- selected[[cancer_col]][i]
+    pw <- selected[[pathway_col]][i]
+    nes_val <- selected[[NES_col]][i]
+    padj_val <- selected[[padj_col]][i]
+    
+    # build ranked stats vector within this cancer type
+    ranked_drugs <- correlation_results_df %>%
+      filter(!is.na(.data[[drug_col]]), !is.na(correlation)) %>%
+      filter(.data[[cancer_col]] == ct) %>%
+      arrange(desc(correlation))
+    
+    if (nrow(ranked_drugs) == 0) {
+      message(paste("Skipping (no ranking data for cancer type):", ct, "|", pw))
+      next
+    }
+    
+    rankings_drugs <- setNames(ranked_drugs$correlation, ranked_drugs[[drug_col]])
+    
+    # build drug sets within this cancer type (same logic as run_dsea_cancer_specific)
+    drug_targets <- GDSC_age_res %>%
+      filter(.data[[cancer_col]] == ct) %>%
+      select(.data[[drug_col]], .data[[target_col]]) %>%
+      distinct() %>%
+      separate_rows(.data[[target_col]], sep = ",\\s*") %>%
+      filter(!is.na(.data[[target_col]]), .data[[target_col]] != "") %>%
+      distinct(.data[[drug_col]], .data[[target_col]])
+    
+    if (nrow(drug_targets) == 0) {
+      message(paste("Skipping (no drug targets for cancer type):", ct, "|", pw))
+      next
+    }
+    
+    drug_sets <- split(drug_targets[[drug_col]], drug_targets[[target_col]])
+    
+    if (!pw %in% names(drug_sets)) {
+      message(paste("Skipping pathway not found in drug_sets:", pw, "|", ct))
+      next
+    }
+    
+    # enforce minSize (consistent with fgsea usage)
+    pw_drugs <- intersect(unique(drug_sets[[pw]]), names(rankings_drugs))
+    if (length(pw_drugs) < minSize) {
+      message(paste("Skipping pathway (below minSize after intersection):", pw, "|", ct))
+      next
+    }
+    
+    # build base plot from fgsea
+    p0 <- fgsea::plotEnrichment(pw_drugs, rankings_drugs)
+    
+    # extract the running ES curve data in a robust way
+    built <- ggplot_build(p0)
+    es_df <- built$data[[1]]  # first layer = running enrichment curve
+    if (!all(c("x", "y") %in% colnames(es_df))) {
+      message(paste("Skipping (could not extract ES curve data):", pw, "|", ct))
+      next
+    }
+    
+    # make the running ES curve thicker by over-plotting it
+    p <- p0 +
+      geom_line(
+        data = es_df,
+        aes(x = x, y = y),
+        inherit.aes = FALSE,
+        linewidth = line_width,
+        colour = "green"
+      ) +
+      labs(
+        title = paste0(pw, " in ", ct),
+        subtitle = paste0("NES = ", round(nes_val, 3), " | padj = ", signif(padj_val, 3))
+      ) +
+      theme_minimal(base_size = base_size) +
+      theme(
+        plot.title = element_text(size = title_size),
+        plot.subtitle = element_text(size = subtitle_size),
+        axis.title.x = element_text(size = axis_title_size),
+        axis.title.y = element_text(size = axis_title_size),
+        axis.text.x = element_text(size = axis_text_size),
+        axis.text.y = element_text(size = axis_text_size)
+      )
+    
+    key <- paste0(ct, "__", pw)
+    plot_list[[key]] <- p
+  }
+  
+  if (length(plot_list) == 0) {
+    stop("No enrichment plots were generated (check inputs / minSize / pathway names).")
+  }
+  
+  # save one PDF per selected (cancer_type, pathway) pair
+  out_dir <- dirname(output_path)
+  prefix <- tools::file_path_sans_ext(basename(output_path))
+  ext <- tools::file_ext(output_path)
+  if (ext == "") ext <- "pdf"
+  
+  for (nm in names(plot_list)) {
+    safe_nm <- gsub("[^A-Za-z0-9_\\-]+", "_", nm)
+    out_file <- file.path(out_dir, paste0(prefix, "_", safe_nm, ".", ext))
+    ggsave(out_file, plot = plot_list[[nm]], width = width, height = height)
+  }
+  
+  return(plot_list)
+}
 
 
 
