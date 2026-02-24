@@ -405,8 +405,8 @@ dsea_pancancer_dotplot <- function(dsea_result, title, output_dir) {
       legend.text = element_text(size = 18)
     ) +
     guides(
-      color = guide_legend(override.aes = list(size = 10)),
-      size = guide_legend(override.aes = list(size = 10))
+      color = guide_legend(override.aes = list(size = 10))
+      # size = guide_legend(override.aes = list(size = 10))
     )
   
   # save plot
