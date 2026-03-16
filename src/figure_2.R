@@ -185,6 +185,13 @@ ggplot(df_chr, aes(x = "%CpGs in model", y = chr, fill = perc_in_model)) +
         legend.title = element_text(size = 14))
 dev.off()
 
+# Statistics CpGs distribution (Entropy, mean, sd)
+mean(df_chr$perc_in_model)
+sd(df_chr$perc_in_model)
+p <- matrix(df_chr$perc_in_model/100, nrow = 1)
+H <- H(p, unit = "log2")
+H_norm <- H / log2(ncol(p))
+
 
 # CpGs outside gene region
 # Helper function to calculate gene region statistics
