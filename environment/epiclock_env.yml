@@ -327,6 +327,7 @@ dependencies:
   - r-miniui=0.1.1.1=r43h6115d3f_0
   - r-minqa=1.2.6=r43hb5eb8f6_0
   - r-modelr=0.1.11=r43h6115d3f_0
+  - r-msigdbr=26.1.0
   - r-munsell=0.5.0=r43h6115d3f_0
   - r-nleqslv=3.3.4=r43h640688f_0
   - r-nlme=3.1_163=r43h640688f_0

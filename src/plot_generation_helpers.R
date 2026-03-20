@@ -1672,6 +1672,521 @@ gsea_cancerspecific_dotplot <- function(significant_results_bp_df, title, output
 
 
 
+############ plot_gsea_top_enrichment_plots_cancerspecific() ###################
+# The 'plot_gsea_top_enrichment_plots_cancerspecific' function generates
+# GSEA-like enrichment plots for GO Biological Processes across cancer types.
+# Each plot corresponds to one pathway/process, while the enrichment curves
+# are overlaid and colored by cancer type.
+plot_gsea_top_enrichment_plots_cancerspecific <- function(significant_results_bp_df,
+                                                          correlation_results_df,
+                                                          go_bp_gene_sets_by_id,
+                                                          go_bp_gene_sets_by_desc = NULL,
+                                                          go_bp_gene_sets_by_name = NULL,
+                                                          output_path,
+                                                          selected_results_bp_df = NULL, # if is not NULL use a subset of the results (e.g. top 3 processes)
+                                                          pathways_to_plot = NULL, # choose the process to plot
+                                                          use_top_n = TRUE, # if 'pathways_to_plot' is NULL and 'use_top_n = TRUE', select the top_n pathways per cancer type based on absolute NES, if is all use all significant processes
+                                                          top_n = 3,
+                                                          minSize = 5,
+                                                          p_adj_threshold = 0.05,
+                                                          cancer_col = "cancer_type",
+                                                          pathway_id_col = "ID",
+                                                          pathway_col = "Description",
+                                                          gene_col = "Gene",
+                                                          stat_col = "correlation",
+                                                          NES_col = "NES",
+                                                          padj_col = "p.adjust",
+                                                          rank_scale = c("absolute", "relative"),
+                                                          width = 14,
+                                                          height = 10,
+                                                          base_size = 22,
+                                                          title_size = 24,
+                                                          axis_title_size = 18,
+                                                          axis_text_size = 16,
+                                                          legend_title_size = 14,
+                                                          legend_text_size = 12,
+                                                          line_width = 2.0,
+                                                          tick_line_width = 0.7,
+                                                          box_line_width = 0.4,
+                                                          gsea_param = 1,
+                                                          cancer_colors_map = cancer_colors) {
+  
+  # libraries
+  library(dplyr)
+  library(ggplot2)
+  
+  # match rank scale argument
+  rank_scale <- match.arg(rank_scale)
+  
+  # internal helper to format adjusted p-values for the legend
+  format_padj_label <- function(x) {
+    if (is.na(x)) {
+      return("NA")
+    }
+    if (x < 0.001) {
+      return(formatC(x, format = "e", digits = 1))
+    }
+    return(format(round(x, 3), nsmall = 3))
+  }
+  
+  # internal helper to compute a GSEA-like running enrichment score curve
+  compute_running_es <- function(pathway_genes, ranked_stats, gsea_param = 1, rank_scale = "absolute") {
+    
+    ranked_stats <- ranked_stats[!is.na(ranked_stats)]
+    ranked_stats <- sort(ranked_stats, decreasing = TRUE)
+    
+    ranked_genes <- names(ranked_stats)
+    ranked_genes <- ranked_genes[!is.na(ranked_genes) & ranked_genes != ""]
+    ranked_stats <- ranked_stats[names(ranked_stats) %in% ranked_genes]
+    
+    pathway_genes <- unique(pathway_genes)
+    hits <- which(names(ranked_stats) %in% pathway_genes)
+    
+    N <- length(ranked_stats)
+    Nh <- length(hits)
+    
+    if (N == 0 || Nh == 0 || Nh >= N) {
+      return(NULL)
+    }
+    
+    hit_weights <- abs(ranked_stats[hits])^gsea_param
+    norm_hit <- sum(hit_weights)
+    
+    if (norm_hit == 0) {
+      return(NULL)
+    }
+    
+    Phit <- rep(0, N)
+    Phit[hits] <- hit_weights / norm_hit
+    
+    Pmiss <- rep(1 / (N - Nh), N)
+    Pmiss[hits] <- 0
+    
+    running_es <- cumsum(Phit - Pmiss)
+    
+    # choose x scale
+    if (rank_scale == "relative") {
+      x_curve <- c(0, seq_len(N) / N * 100)
+      x_hits  <- hits / N * 100
+      x_end   <- 100
+    } else {
+      x_curve <- c(0, seq_len(N))
+      x_hits  <- hits
+      x_end   <- N
+    }
+    
+    curve_df <- data.frame(
+      x = x_curve,
+      y = c(0, running_es)
+    )
+    
+    hit_df <- data.frame(
+      x = x_hits
+    )
+    
+    return(list(
+      curve_df = curve_df,
+      hit_df = hit_df,
+      N = N,
+      Nh = Nh,
+      x_end = x_end
+    ))
+  }
+  
+  # internal helper to retrieve a pathway gene set
+  get_pathway_genes <- function(pathway_id, pathway_desc,
+                                go_bp_gene_sets_by_id,
+                                go_bp_gene_sets_by_desc = NULL,
+                                go_bp_gene_sets_by_name = NULL) {
+    
+    pathway_id_norm <- toupper(trimws(pathway_id))
+    pathway_desc_norm <- tolower(trimws(pathway_desc))
+    
+    # 1. try GO ID
+    if (!is.null(go_bp_gene_sets_by_id) &&
+        pathway_id_norm %in% names(go_bp_gene_sets_by_id)) {
+      return(unique(go_bp_gene_sets_by_id[[pathway_id_norm]]))
+    }
+    
+    # 2. try pathway description
+    if (!is.null(go_bp_gene_sets_by_desc) &&
+        pathway_desc_norm %in% names(go_bp_gene_sets_by_desc)) {
+      return(unique(go_bp_gene_sets_by_desc[[pathway_desc_norm]]))
+    }
+    
+    # 3. try readable gs_name
+    if (!is.null(go_bp_gene_sets_by_name) &&
+        pathway_desc_norm %in% names(go_bp_gene_sets_by_name)) {
+      return(unique(go_bp_gene_sets_by_name[[pathway_desc_norm]]))
+    }
+    
+    return(NULL)
+  }
+  
+  # base significant results table
+  significant_results_df <- as.data.frame(significant_results_bp_df) %>%
+    filter(!is.na(.data[[cancer_col]]),
+           !is.na(.data[[pathway_id_col]]),
+           !is.na(.data[[pathway_col]]),
+           !is.na(.data[[NES_col]]),
+           !is.na(.data[[padj_col]])) %>%
+    mutate(
+      !!pathway_id_col := toupper(trimws(.data[[pathway_id_col]])),
+      !!pathway_col := trimws(.data[[pathway_col]])
+    ) %>%
+    filter(.data[[padj_col]] < p_adj_threshold) %>%
+    distinct(.data[[cancer_col]], .data[[pathway_id_col]], .keep_all = TRUE)
+  
+  # select pathway-cancer pairs to plot
+  if (!is.null(selected_results_bp_df)) {
+    
+    selected_pairs <- as.data.frame(selected_results_bp_df) %>%
+      filter(!is.na(.data[[cancer_col]]),
+             !is.na(.data[[pathway_id_col]]),
+             !is.na(.data[[pathway_col]])) %>%
+      mutate(
+        !!pathway_id_col := toupper(trimws(.data[[pathway_id_col]])),
+        !!pathway_col := trimws(.data[[pathway_col]])
+      ) %>%
+      distinct(.data[[cancer_col]], .data[[pathway_id_col]], .keep_all = TRUE)
+    
+    if (!is.null(pathways_to_plot)) {
+      pathways_to_plot_id   <- toupper(trimws(pathways_to_plot))
+      pathways_to_plot_desc <- tolower(trimws(pathways_to_plot))
+      
+      selected_pairs <- selected_pairs %>%
+        filter(.data[[pathway_id_col]] %in% pathways_to_plot_id |
+                 tolower(.data[[pathway_col]]) %in% pathways_to_plot_desc)
+    }
+    
+  } else {
+    
+    if (!is.null(pathways_to_plot)) {
+      
+      pathways_to_plot_id   <- toupper(trimws(pathways_to_plot))
+      pathways_to_plot_desc <- tolower(trimws(pathways_to_plot))
+      
+      selected_pairs <- significant_results_df %>%
+        filter(.data[[pathway_id_col]] %in% pathways_to_plot_id |
+                 tolower(.data[[pathway_col]]) %in% pathways_to_plot_desc)
+      
+    } else {
+      
+      if (use_top_n) {
+        selected_pairs <- significant_results_df %>%
+          group_by(.data[[cancer_col]]) %>%
+          arrange(desc(abs(.data[[NES_col]])), .data[[padj_col]], .by_group = TRUE) %>%
+          slice_head(n = top_n) %>%
+          ungroup()
+      } else {
+        selected_pairs <- significant_results_df
+      }
+    }
+  }
+  
+  if (nrow(selected_pairs) == 0) {
+    stop("No pathways available after filtering/selection.")
+  }
+  
+  # unique pathways to generate one plot per pathway
+  selected_pathways <- selected_pairs %>%
+    distinct(.data[[pathway_id_col]], .data[[pathway_col]])
+  
+  # initialize output plot list
+  plot_list <- list()
+  
+  # loop over selected pathways
+  for (i in seq_len(nrow(selected_pathways))) {
+    
+    pw_id   <- selected_pathways[[pathway_id_col]][i]
+    pw_desc <- selected_pathways[[pathway_col]][i]
+    
+    pathway_genes <- get_pathway_genes(
+      pathway_id = pw_id,
+      pathway_desc = pw_desc,
+      go_bp_gene_sets_by_id = go_bp_gene_sets_by_id,
+      go_bp_gene_sets_by_desc = go_bp_gene_sets_by_desc,
+      go_bp_gene_sets_by_name = go_bp_gene_sets_by_name
+    )
+    
+    if (is.null(pathway_genes)) {
+      message(paste("Skipping pathway (not found in gene sets):", pw_id, "|", pw_desc))
+      next
+    }
+    
+    # keep only cancer types present in the selected subset
+    pathway_pairs <- selected_pairs %>%
+      filter(.data[[pathway_id_col]] == pw_id)
+    
+    if (nrow(pathway_pairs) == 0) {
+      next
+    }
+    
+    # order cancer types by absolute NES within the selected subset
+    cancer_order <- pathway_pairs %>%
+      arrange(desc(abs(.data[[NES_col]])), .data[[padj_col]]) %>%
+      pull(.data[[cancer_col]]) %>%
+      unique()
+    
+    curve_list <- list()
+    hit_list   <- list()
+    x_end_list <- c()
+    
+    # compute one enrichment curve per cancer type
+    for (ct in cancer_order) {
+      
+      ranked_genes_df <- correlation_results_df %>%
+        filter(.data[[cancer_col]] == ct,
+               !is.na(.data[[gene_col]]),
+               !is.na(.data[[stat_col]])) %>%
+        distinct(.data[[gene_col]], .keep_all = TRUE) %>%
+        arrange(desc(.data[[stat_col]]))
+      
+      if (nrow(ranked_genes_df) == 0) {
+        message(paste("Skipping cancer type (no ranking data):", ct, "|", pw_desc))
+        next
+      }
+      
+      ranked_stats <- ranked_genes_df[[stat_col]]
+      names(ranked_stats) <- ranked_genes_df[[gene_col]]
+      
+      pathway_genes_ct <- intersect(pathway_genes, names(ranked_stats))
+      
+      if (length(pathway_genes_ct) < minSize) {
+        message(paste("Skipping cancer type (below minSize after intersection):", ct, "|", pw_desc))
+        next
+      }
+      
+      es_obj <- compute_running_es(
+        pathway_genes = pathway_genes_ct,
+        ranked_stats = ranked_stats,
+        gsea_param = gsea_param,
+        rank_scale = rank_scale
+      )
+      
+      if (is.null(es_obj)) {
+        message(paste("Skipping cancer type (could not compute ES):", ct, "|", pw_desc))
+        next
+      }
+      
+      curve_df_ct <- es_obj$curve_df %>%
+        mutate(cancer_type = ct)
+      
+      hit_df_ct <- es_obj$hit_df %>%
+        mutate(cancer_type = ct)
+      
+      curve_list[[ct]] <- curve_df_ct
+      hit_list[[ct]]   <- hit_df_ct
+      x_end_list[ct]   <- es_obj$x_end
+    }
+    
+    if (length(curve_list) == 0) {
+      message(paste("Skipping pathway (no curves generated):", pw_id, "|", pw_desc))
+      next
+    }
+    
+    curves_df <- bind_rows(curve_list)
+    hits_df   <- bind_rows(hit_list)
+    
+    valid_cancers <- unique(curves_df$cancer_type)
+    cancer_order  <- cancer_order[cancer_order %in% valid_cancers]
+    
+    curves_df$cancer_type <- factor(curves_df$cancer_type, levels = cancer_order)
+    hits_df$cancer_type   <- factor(hits_df$cancer_type, levels = cancer_order)
+    
+    # build legend labels including NES and adjusted p-value
+    pathway_pairs_valid <- pathway_pairs %>%
+      filter(.data[[cancer_col]] %in% cancer_order) %>%
+      distinct(.data[[cancer_col]], .keep_all = TRUE) %>%
+      mutate(
+        padj_label = vapply(.data[[padj_col]], format_padj_label, character(1)),
+        legend_label = paste0(
+          .data[[cancer_col]],
+          " (NES=", round(.data[[NES_col]], 2),
+          ", padj=", padj_label, ")"
+        )
+      )
+    
+    legend_labels <- setNames(
+      pathway_pairs_valid$legend_label,
+      pathway_pairs_valid[[cancer_col]]
+    )
+    
+    legend_labels <- legend_labels[cancer_order]
+    
+    # define colors
+    plot_colors <- cancer_colors_map[cancer_order]
+    
+    # add fallback colors if some cancer types are not present in the palette
+    if (any(is.na(plot_colors))) {
+      missing_cancers <- cancer_order[is.na(plot_colors)]
+      extra_colors <- scales::hue_pal()(length(missing_cancers))
+      names(extra_colors) <- missing_cancers
+      plot_colors[missing_cancers] <- extra_colors
+    }
+    
+    # x range
+    x_min <- 0
+    x_max <- max(unname(x_end_list[as.character(cancer_order)]), na.rm = TRUE)
+    
+    # define vertical space for the hit tracks
+    y_range <- range(curves_df$y, na.rm = TRUE)
+    y_span <- diff(y_range)
+    if (y_span == 0) y_span <- 1
+    
+    # place tracks lower and closer to each other
+    track_height <- 0.07 * y_span
+    track_gap    <- 0.010 * y_span
+    first_track_top <- y_range[1] - 0.28 * y_span
+    
+    row_map <- data.frame(
+      cancer_type = factor(cancer_order, levels = cancer_order),
+      row_id = seq_along(cancer_order),
+      x_end = unname(x_end_list[as.character(cancer_order)])
+    ) %>%
+      mutate(
+        ymax = first_track_top - (row_id - 1) * (track_height + track_gap),
+        ymin = ymax - track_height,
+        ymid = (ymin + ymax) / 2,
+        xmin = x_min,
+        xmax = x_end
+      )
+    
+    hits_df <- hits_df %>%
+      left_join(row_map, by = "cancer_type")
+    
+    # x label based on rank scale
+    x_label <- ifelse(rank_scale == "relative", "Gene Rank (%)", "Gene Rank")
+    
+    # define pretty axis breaks
+    x_breaks <- if (rank_scale == "relative") {
+      seq(0, 100, by = 25)
+    } else {
+      pretty(c(x_min, x_max), n = 5)
+    }
+    
+    y_breaks <- pretty(y_range, n = 5)
+    
+    # helper data to generate point-only legend
+    legend_df <- data.frame(
+      cancer_type = factor(cancer_order, levels = cancer_order),
+      x = rep(x_min, length(cancer_order)),
+      y = rep(y_range[2], length(cancer_order))
+    )
+    
+    # one single plot with curves and boxed hit tracks
+    p <- ggplot() +
+      geom_hline(yintercept = 0, linetype = "dashed", color = "grey40", linewidth = 0.5) +
+      geom_line(
+        data = curves_df,
+        aes(x = x, y = y, color = cancer_type, group = cancer_type),
+        linewidth = line_width,
+        alpha = 0.95,
+        show.legend = FALSE
+      ) +
+      geom_point(
+        data = legend_df,
+        aes(x = x, y = y, color = cancer_type),
+        alpha = 0,
+        size = 3,
+        show.legend = TRUE
+      ) +
+      geom_rect(
+        data = row_map,
+        aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax),
+        inherit.aes = FALSE,
+        fill = "white",
+        color = "black",
+        linewidth = box_line_width,
+        show.legend = FALSE
+      ) +
+      geom_linerange(
+        data = hits_df,
+        aes(x = x, ymin = ymin, ymax = ymax, color = cancer_type),
+        linewidth = tick_line_width,
+        alpha = 0.95,
+        show.legend = FALSE
+      ) +
+      scale_color_manual(
+        values = plot_colors,
+        breaks = cancer_order,
+        labels = legend_labels,
+        drop = FALSE
+      ) +
+      scale_x_continuous(breaks = x_breaks) +
+      scale_y_continuous(breaks = y_breaks) +
+      guides(
+        color = guide_legend(
+          override.aes = list(
+            shape = 16,
+            size = 4,
+            alpha = 1,
+            linewidth = 0,
+            linetype = 0
+          )
+        )
+      ) +
+      labs(
+        title = pw_desc,
+        x = x_label,
+        y = "Enrichment Score",
+        color = "Cancer type (NES, padj)"
+      ) +
+      theme_minimal(base_size = base_size) +
+      theme(
+        plot.title = element_text(size = title_size, face = "bold"),
+        axis.title.x = element_text(size = axis_title_size),
+        axis.title.y = element_text(size = axis_title_size),
+        axis.text.x = element_text(size = axis_text_size),
+        axis.text.y = element_text(size = axis_text_size),
+        legend.position = "right",
+        legend.title = element_text(size = legend_title_size),
+        legend.text = element_text(size = legend_text_size, lineheight = 0.9),
+        legend.key.size = grid::unit(0.7, "lines"),
+        legend.spacing.y = grid::unit(0.2, "lines"),
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(10, 25, 30, 10)
+      ) +
+      coord_cartesian(
+        xlim = c(x_min, x_max),
+        ylim = c(min(row_map$ymin) - 0.12 * y_span, y_range[2] + 0.06 * y_span),
+        clip = "off"
+      )
+    
+    key <- paste0(pw_id, "__", pw_desc)
+    plot_list[[key]] <- p
+  }
+  
+  if (length(plot_list) == 0) {
+    stop("No enrichment plots were generated (check inputs / top_n / minSize / pathway IDs).")
+  }
+  
+  # save one PDF per selected pathway
+  out_dir <- dirname(output_path)
+  prefix <- tools::file_path_sans_ext(basename(output_path))
+  ext <- tools::file_ext(output_path)
+  if (ext == "") ext <- "pdf"
+  
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  
+  for (nm in names(plot_list)) {
+    safe_nm <- gsub("[^A-Za-z0-9_\\-]+", "_", nm)
+    out_file <- file.path(out_dir, paste0(prefix, "_", safe_nm, ".", ext))
+    ggsave(out_file, plot = plot_list[[nm]], width = width, height = height)
+  }
+  
+  return(plot_list)
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
