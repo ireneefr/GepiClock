@@ -333,7 +333,7 @@ anova_analysis_drugresponse_pan <- function(GDSC_age, age_variable) {
 # in drug response data after ANOVA correction. This method ranks drugs based on the correlation between their
 # predicted age and residual drug sensitivity (LN_IC50), then tests whether specific drug targets are significantly
 # enriched among the top-ranked drugs.
-run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res, output_dir) {
+run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res, output_dir, output_dir_all) {
   set.seed(123)  
   
   # rank drugs based on correlation between predicted age and ANOVA residuals
@@ -367,13 +367,18 @@ run_dsea_pan_cancer <- function(correlation_results_ANOVA, GDSC_age_res, output_
   significant_results_DSEA_df <- significant_results_DSEA %>%
     mutate(across(where(is.list), ~ sapply(., toString)))
   
+  dsea_results_df <- dsea_results %>%
+    mutate(across(where(is.list), ~ sapply(., toString)))
+  
   # save results 
   output_path <- output_dir
   write_xlsx(significant_results_DSEA_df, output_path)
   
+  output_path_all <- output_dir_all
+  write_xlsx(dsea_results_df, output_path_all)
+  
   return(significant_results_DSEA_df)
 }
-
 
 
 
@@ -625,7 +630,11 @@ find_empty_space <- function(x, y, n_grid = 5) {
 # The 'run_dsea_cancer_specific' function performs Drug Set Enrichment Analysis (DSEA) for each cancer type.
 # This method ranks drugs based on the correlation between predicted age and drug response (LN_IC50) 
 # and tests whether specific drug targets are significantly enriched among the top-ranked drugs.
-run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_filtered, output_dir) {
+############ run_dsea_cancer_specific() ###################
+# The 'run_dsea_cancer_specific' function performs Drug Set Enrichment Analysis (DSEA) for each cancer type.
+# This method ranks drugs based on the correlation between predicted age and drug response (LN_IC50) 
+# and tests whether specific drug targets are significantly enriched among the top-ranked drugs.
+run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_filtered, output_dir, output_dir_dsea_cancerspecific) {
   set.seed(123)
   
   # filter correlations and compute mean per cancer type and drug
@@ -698,12 +707,17 @@ run_dsea_cancer_specific <- function(cumulative_correlation_results, GDSC_age_fi
   significant_results_df <- significant_results %>%
     mutate(across(where(is.list), ~ sapply(., toString)))
   
+  dsea_combined_results_df <- dsea_combined_results %>%
+    mutate(across(where(is.list), ~ sapply(., toString)))
+  
   output_path <- output_dir
   write_xlsx(significant_results_df, output_path)
   
+  output_path_dsea_cancerspecific <- output_dir_dsea_cancerspecific
+  write_xlsx(dsea_combined_results_df, output_path_dsea_cancerspecific)
+  
   return(significant_results_df)
 }
-
 
 
 
@@ -1041,7 +1055,6 @@ anova_analysis_genedep_pan <- function(gene_dep_age) {
 # this method ranks genes based on the correlation between their predicted age and ANOVA residuals,
 # then tests whether specific biological pathways (GO BP, GO MF, GO CC, KEGG) are significantly 
 # enriched among the top-ranked genes.
-
 run_gsea_pan_cancer <- function(correlation_results_ANOVA) {   
   set.seed(123)  
   
@@ -1076,7 +1089,7 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     ont = "BP", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 0.05
+    pvalueCutoff = 1
   )
   
   # GO Molecular Function (MF)
@@ -1087,7 +1100,7 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     ont = "MF", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 0.05
+    pvalueCutoff = 1
   )
   
   # GO Cellular Component (CC)
@@ -1098,7 +1111,7 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     ont = "CC", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 0.05
+    pvalueCutoff = 1
   )
   
   # KEGG Pathways
@@ -1107,16 +1120,30 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     organism = "hsa", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 0.05
+    pvalueCutoff = 1
   )
+  
+  # ============================
+  # SAVE COMPLETE RESULTS
+  # ============================
+  
+  gseabp_df <- gseabp@result
+  gseamf_df <- gseamf@result
+  gseacc_df <- gseacc@result
+  gseakegg_df <- gseakegg@result
+  
+  write_xlsx(gseabp_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOBP_gsea_pancancer_results.xlsx")
+  write_xlsx(gseamf_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOMF_gsea_pancancer_results.xlsx")
+  write_xlsx(gseacc_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOCC_gsea_pancancer_results.xlsx")
+  write_xlsx(gseakegg_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/KEGG_gsea_pancancer_results.xlsx")
   
   # ============================
   # EXTRACT SIGNIFICANT RESULTS
   # ============================
-  significant_gseabp <- gseabp@result %>% filter(p.adjust < 0.05)
-  significant_gseamf <- gseamf@result %>% filter(p.adjust < 0.05)
-  significant_gseacc <- gseacc@result %>% filter(p.adjust < 0.05)
-  significant_gseakegg <- gseakegg@result %>% filter(p.adjust < 0.05)
+  significant_gseabp <- gseabp_df %>% filter(p.adjust < 0.05)
+  significant_gseamf <- gseamf_df %>% filter(p.adjust < 0.05)
+  significant_gseacc <- gseacc_df %>% filter(p.adjust < 0.05)
+  significant_gseakegg <- gseakegg_df %>% filter(p.adjust < 0.05)
   
   # number of significant pathways found
   print(paste("Significant GO BP terms:", nrow(significant_gseabp)))
@@ -1128,26 +1155,19 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
   # SAVE SIGNIFICANT RESULTS
   # ============================
   
-  # remove "core_enrichment" column before saving
-  significant_gseabp_df <- significant_gseabp[, !colnames(significant_gseabp) %in% "core_enrichment"]
-  significant_gseamf_df <- significant_gseamf[, !colnames(significant_gseamf) %in% "core_enrichment"]
-  significant_gseacc_df <- significant_gseacc[, !colnames(significant_gseacc) %in% "core_enrichment"]
-  significant_gseakegg_df <- significant_gseakegg[, !colnames(significant_gseakegg) %in% "core_enrichment"]
-  
-  write_xlsx(significant_gseabp_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOBP_enrichments.xlsx")
-  write_xlsx(significant_gseamf_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOMF_enrichments.xlsx")
-  write_xlsx(significant_gseacc_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOCC_enrichments.xlsx")
-  write_xlsx(significant_gseakegg_df, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOKEGG_enrichments.xlsx")
+  write_xlsx(significant_gseabp, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOBP_significant_pancancer_results.xlsx")
+  write_xlsx(significant_gseamf, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOMF_significant_pancancer_results.xlsx")
+  write_xlsx(significant_gseacc, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOCC_significant_pancancer_results.xlsx")
+  write_xlsx(significant_gseakegg, "results/cell_lines/cell_lines_gene_dependencies/gsea_pancancer/KEGG_significant_pancancer_results.xlsx")
   
   return(list(
-    GO_BP = significant_gseabp_df,
-    GO_MF = significant_gseamf_df,
-    GO_CC = significant_gseacc_df,
-    KEGG = significant_gseakegg_df,
+    GO_BP = significant_gseabp,
+    GO_MF = significant_gseamf,
+    GO_CC = significant_gseacc,
+    KEGG = significant_gseakegg,
     rankings = rankings
   ))
 }
-
 
 
 ############ load_and_filter_genedep_cancer_type() ###################

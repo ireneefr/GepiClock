@@ -77,9 +77,12 @@ plot_anova_LNIC50_residuals(anova_drug_pancancer_results$residuals, output_dir <
 # perform Drug Set Enrichment Analysis (DSEA) using drugs ranked by their correlation 
 # between predicted age and residual drug sensitivity (LN_IC50).
 # identifies enriched drug targets associated with age-dependent drug responses.
-dsea_pan_cancer_results <- run_dsea_pan_cancer(anova_drug_pancancer_results$correlation_results, GDSC_age,
-output_dir = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"))
-
+dsea_pan_cancer_results <- run_dsea_pan_cancer(
+  correlation_results_ANOVA,
+  GDSC_age,
+  output_dir = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/significant_enrichment_dsea_pancancer.xlsx"),
+  output_dir_all = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_pancancer/dsea_pancancer_results.xlsx")
+)
 # plot drug target enrichment and associated drugs
 ordered_targets <- dsea_pancancer_dotplot(dsea_result = dsea_pan_cancer_results, "Drug Target Enrichment by Predicted Group",
 output_dir = paste0(figures_path, "DSEA_pancancer_dotplot.png"))
@@ -144,8 +147,12 @@ plot_significant_drugs(GDSC_age_filtered, significant_drugs_list,
 # performs DSEA for each cancer type separately.
 # ranks drugs based on correlation between predicted age and drug response (LN_IC50).
 # identifies enriched drug targets specific to individual cancer types.
-dsea_cancer_specific_results <- run_dsea_cancer_specific(cumulative_correlation_results, GDSC_age_filtered,
-output_dir = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"))
+dsea_cancer_specific_results <- run_dsea_cancer_specific(
+  cumulative_correlation_results,
+  GDSC_age_filtered,
+  output_dir = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/significant_enrichment_dsea_cancerspecific.xlsx"),
+  output_dir_dsea_cancerspecific = paste0(results_path, "cell_lines/cell_lines_drug_sensitivity/dsea_per_cancer_type/dsea_cancerspecific_results.xlsx")
+)
 
 # plot cancer-type-specific DSEA results
 dsea_cancerspecific_dotplot(dsea_cancer_specific_results, "Cancer-Specific DSEA", output_dir = paste0(figures_path, "dsea_dotplot_cancer_specific_clustered_MutExMatSorting.png"))
