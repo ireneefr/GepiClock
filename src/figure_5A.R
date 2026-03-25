@@ -29,7 +29,7 @@ source("src/plot_generation_helpers.R")
 significant_enrichments_bp_cancer_spec <- read_csv(
   paste0(
     results_path,
-    "cell_lines/cell_lines_gene_dependencies/gsea_per_cancer_type/01_combined_BP_results.csv"
+    "cell_lines/cell_lines_gene_dependencies/gsea_per_cancer_type/01_significant_combined_BP_results.csv"
   ),
   show_col_types = FALSE
 )

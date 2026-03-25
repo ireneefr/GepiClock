@@ -28,7 +28,7 @@ source("src/plot_generation_helpers.R")
 
 # load enrichment data
 GO_CC_pan <- read_xlsx(paste0(results_path,
- "cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOCC_enrichments.xlsx"))
+ "cell_lines/cell_lines_gene_dependencies/gsea_pancancer/GOCC_significant_pancancer_results.xlsx"))
 
 # dotplot GO Cellular Component (CC)
 GSEA_yo_dotplot(gsea_result = GO_CC_pan, title = "Pan-Cancer Gene Enrichment CC",

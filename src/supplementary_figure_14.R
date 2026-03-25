@@ -28,7 +28,7 @@ source("src/plot_generation_helpers.R")
 
 # load enrichment data
 KEGG_pan <- read_xlsx(paste0(results_path,
- "cell_lines/cell_lines_gene_dependencies/gsea_pancancer/KEGG_enrichments.xlsx"))
+ "cell_lines/cell_lines_gene_dependencies/gsea_pancancer/KEGG_significant_pancancer_results.xlsx"))
 
 # dotplot KEGG
 GSEA_yo_dotplot(gsea_result = KEGG_pan, title = "Pan-Cancer Gene Enrichment KEGG",
