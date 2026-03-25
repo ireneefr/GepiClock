@@ -1517,7 +1517,7 @@ extract_significant_genes <- function(anova_results) {
 # This method ranks grnrd based on the correlation between predicted age and gene dependency (gene effect) 
 # and tests whether specific pathways are significantly enriched among the top-ranked genes.
 run_gsea_cancer_specific <- function(cumulative_correlation_results, 
-                                     output_dir = paste0(results_path,"cell_lines/cell_line_gene_dependencies/gsea_per_cancer_type")) {
+                                     output_dir = paste0(results_path,"cell_lines/cell_lines_gene_dependencies/gsea_per_cancer_type/")) {
   
   set.seed(123)
   dir.create(output_dir, showWarnings = FALSE, recursive = TRUE) # create output directory if it does not exist
@@ -1564,15 +1564,15 @@ run_gsea_cancer_specific <- function(cumulative_correlation_results,
     
     # run GSEA for different gene sets
     gseabp <- gseGO(geneList = rankings, OrgDb = org.Hs.eg.db, keyType = "ENTREZID", ont = "BP",
-                    minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 0.05)
+                    minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 1, seed = TRUE)
     
     gseamf <- gseGO(geneList = rankings, OrgDb = org.Hs.eg.db, keyType = "ENTREZID", ont = "MF",
-                    minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 0.05)
+                    minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 1, seed = TRUE)
     
     gseacc <- gseGO(geneList = rankings, OrgDb = org.Hs.eg.db, keyType = "ENTREZID", ont = "CC",
-                    minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 0.05)
+                    minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 1, seed = TRUE)
     
-    gseakegg <- gseKEGG(geneList = rankings, organism = "hsa", minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 0.05)
+    gseakegg <- gseKEGG(geneList = rankings, organism = "hsa", minGSSize = 5, maxGSSize = 2000, pvalueCutoff = 1, seed = TRUE)
     
     # store results
     gsea_results_all[[cancer_type]] <- list(
@@ -1583,10 +1583,10 @@ run_gsea_cancer_specific <- function(cumulative_correlation_results,
     )
     
     # save individual results per cancer type
-    write.csv(gsea_results_all[[cancer_type]]$BP, file = file.path(output_dir, paste0(cancer_type, "_BP_results.csv")), row.names = FALSE)
-    write.csv(gsea_results_all[[cancer_type]]$MF, file = file.path(output_dir, paste0(cancer_type, "_MF_results.csv")), row.names = FALSE)
-    write.csv(gsea_results_all[[cancer_type]]$CC, file = file.path(output_dir, paste0(cancer_type, "_CC_results.csv")), row.names = FALSE)
-    write.csv(gsea_results_all[[cancer_type]]$KEGG, file = file.path(output_dir, paste0(cancer_type, "_KEGG_results.csv")), row.names = FALSE)
+    write_xlsx(gsea_results_all[[cancer_type]]$BP, file.path(output_dir, paste0(cancer_type, "_BP_results.xlsx")))
+    write_xlsx(gsea_results_all[[cancer_type]]$MF, file.path(output_dir, paste0(cancer_type, "_MF_results.xlsx")))
+    write_xlsx(gsea_results_all[[cancer_type]]$CC, file.path(output_dir, paste0(cancer_type, "_CC_results.xlsx")))
+    write_xlsx(gsea_results_all[[cancer_type]]$KEGG, file.path(output_dir, paste0(cancer_type, "_KEGG_results.xlsx")))
     
   }
   
@@ -1597,10 +1597,10 @@ run_gsea_cancer_specific <- function(cumulative_correlation_results,
   combined_results_kegg <- do.call(rbind, lapply(gsea_results_all, `[[`, "KEGG"))
   
   # save combined results
-  write.csv(combined_results_bp, file = file.path(output_dir, "01_combined_BP_results.csv"), row.names = FALSE)
-  write.csv(combined_results_mf, file = file.path(output_dir, "02_combined_MF_results.csv"), row.names = FALSE)
-  write.csv(combined_results_cc, file = file.path(output_dir, "03_combined_CC_results.csv"), row.names = FALSE)
-  write.csv(combined_results_kegg, file = file.path(output_dir, "04_combined_KEGG_results.csv"), row.names = FALSE)
+  write_xlsx(combined_results_bp, file.path(output_dir, "01_combined_BP_results.xlsx"))
+  write_xlsx(combined_results_mf, file.path(output_dir, "02_combined_MF_results.xlsx"))
+  write_xlsx(combined_results_cc, file.path(output_dir, "03_combined_CC_results.xlsx"))
+  write_xlsx(combined_results_kegg, file.path(output_dir, "04_combined_KEGG_results.xlsx"))
   
   # filter significant results (FDR < 0.05)
   significant_results_bp <- combined_results_bp %>% filter(p.adjust < 0.05)
@@ -1622,15 +1622,10 @@ run_gsea_cancer_specific <- function(cumulative_correlation_results,
   print(head(significant_results_kegg))
   
   # save significant results (excluding 'core_enrichment' column)
-  significant_results_bp_df <- significant_results_bp[, !colnames(significant_results_bp) %in% "core_enrichment"]
-  significant_results_mf_df <- significant_results_mf[, !colnames(significant_results_mf) %in% "core_enrichment"]
-  significant_results_cc_df <- significant_results_cc[, !colnames(significant_results_cc) %in% "core_enrichment"]
-  significant_results_kegg_df <- significant_results_kegg[, !colnames(significant_results_kegg) %in% "core_enrichment"]
-  
-  write_xlsx(significant_results_bp_df, file.path(output_dir, "combined_GOBP_enrichments.xlsx"))
-  write_xlsx(significant_results_mf_df, file.path(output_dir, "combined_GOMF_enrichments.xlsx"))
-  write_xlsx(significant_results_cc_df, file.path(output_dir, "combined_GOCC_enrichments.xlsx"))
-  write_xlsx(significant_results_kegg_df, file.path(output_dir, "combined_KEGG_enrichments.xlsx"))
+  write_xlsx(significant_results_bp, file.path(output_dir, "01_significant_combined_GOBP_enrichments.xlsx"))
+  write_xlsx(significant_results_mf, file.path(output_dir, "02_significant_combined_GOMF_enrichments.xlsx"))
+  write_xlsx(significant_results_cc, file.path(output_dir, "03_significant_combined_GOCC_enrichments.xlsx"))
+  write_xlsx(significant_results_kegg, file.path(output_dir, "04_significant_combined_KEGG_enrichments.xlsx"))
   
   return(list(
     BP = significant_results_bp,
@@ -1639,8 +1634,6 @@ run_gsea_cancer_specific <- function(cumulative_correlation_results,
     KEGG = significant_results_kegg
   ))
 }
-
-
 
 
 
