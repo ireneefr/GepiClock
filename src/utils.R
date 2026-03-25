@@ -1089,7 +1089,8 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     ont = "BP", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 1
+    pvalueCutoff = 1,
+    seed = TRUE
   )
   
   # GO Molecular Function (MF)
@@ -1100,7 +1101,8 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     ont = "MF", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 1
+    pvalueCutoff = 1,
+    seed = TRUE
   )
   
   # GO Cellular Component (CC)
@@ -1111,7 +1113,8 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     ont = "CC", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 1
+    pvalueCutoff = 1,
+    seed = TRUE
   )
   
   # KEGG Pathways
@@ -1120,7 +1123,8 @@ run_gsea_pan_cancer <- function(correlation_results_ANOVA) {
     organism = "hsa", 
     minGSSize = 5, 
     maxGSSize = 2000, 
-    pvalueCutoff = 1
+    pvalueCutoff = 1,
+    seed = TRUE
   )
   
   # ============================
