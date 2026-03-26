@@ -1,8 +1,17 @@
+# RStudio
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 *.Rproj
+
+# OS
+.DS_Store
 **/.DS_Store
-results/TCGA/predictions/missing/
-results/TCGA/predictions/reducing/
+
+# Large/local project assets not kept in Git
+Figures/
+metadata/
+results/
+Supplementary Tables/
+Supplementary Figures/
