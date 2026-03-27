@@ -20,13 +20,12 @@ cpgs_450k <- ann_450k$Inc.[1:which(ann_450k$Illumina == "[Controls]")-1]
 venn.diagram(list(`Infinium\nHumanMethylation450\nBeadChip` = cpgs_450k,
                   `Infinium\nMethylationEPIC\nBeadChip` = cpgs_epic,
                   `Infinium\nMethylationEPIC v2.0\nBeadChip` = cpgs_epicv2),
-             filename = "Supplementary Figures/Supplementary_Figure_2.png",
+             filename = "Supplementary Figures/Supplementary_Figure_2.pdf",
              fill = c("#1f77b4", "#ff7f0e", "#2ca02c"),
              fontfamily = "sans",
              cat.fontfamily = "sans",
              cat.pos = c(-35, 35, 180),
              cat.dist = c(0.13, 0.13, 0.13),
              margin = 0.05, 
-             fontface = c("plain", "plain", "plain", "plain", "bold", "plain", "plain"),
-             resolution = 600)
+             fontface = c("plain", "plain", "plain", "plain", "bold", "plain", "plain"))
 

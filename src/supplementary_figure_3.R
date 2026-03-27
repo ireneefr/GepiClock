@@ -33,4 +33,4 @@ ggplot(tcga_samples_projects, aes(x = reorder(project, project, length, decreasi
         legend.position = c(0.75, 0.85),
         legend.background = element_rect(fill = "white", color = "white", size = 0.3)) +
   guides(fill = guide_legend(title = "Sample type"))
-ggsave("Supplementary Figures/Supplementary_Figure_3.png")
+ggsave("Supplementary Figures/Supplementary_Figure_3.pdf")
