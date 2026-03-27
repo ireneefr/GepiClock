@@ -12,6 +12,32 @@ library(tidyr)
 library(dplyr)
 dir_metadata <- "metadata/"
 
+dir_metadata <- "metadata/"
+
+# Load data
+model_coefs <- read.csv("results/TCGA/model/model_coefs.csv")
+model_coefs <- subset(model_coefs, s0 != 0) #4863  2
+ann <- getAnnotation(IlluminaHumanMethylation450kanno.ilmn12.hg19)
+ann_model_cpgs <- as.data.frame(merge(ann, model_coefs, by.x = "row.names", by.y = "X"))
+
+
+# CpG models in karyogram
+gr_model <- GRanges(seqnames = ann_model_cpgs$chr, 
+                    ranges = IRanges(start = ann_model_cpgs$pos, end = ann_model_cpgs$pos),
+                    coef = ann_model_cpgs$s0)
+seqlevels(gr_model, pruning.mode = "coarse") <- paste0("chr", 1:22)
+seqinfo(gr_model) <- seqinfo(BSgenome.Hsapiens.UCSC.hg19)[seqlevels(gr_model)]
+
+gr_all <- GRanges(seqnames = ann$chr, 
+                  ranges = IRanges(start = ann$pos, end = ann$pos))
+seqlevels(gr_all, pruning.mode = "coarse") <- paste0("chr", 1:22)
+seqinfo(gr_all) <- seqinfo(BSgenome.Hsapiens.UCSC.hg19)[seqlevels(gr_all)]
+
+# CpGs per chromosome
+df_chr <- data.frame(chr = paste0("chr", 1:22),
+                     total_chr = sapply(paste0("chr", 1:22), function(x) length(gr_all[seqnames(gr_all) == x])),
+                     model_chr = sapply(paste0("chr", 1:22), function(x) length(gr_model[seqnames(gr_model) == x])))
+
 # Get percentages
 total_all_cpgs <- sum(df_chr$total_chr)
 total_model_cpgs <- sum(df_chr$model_chr)
@@ -34,7 +60,7 @@ df_chr$Var1 <- factor(df_chr$Var1, levels = paste0("chr", 1:22))
 df_chr$perc_in_genome <- (df_chr$Freq / sum(df_chr$Freq)) * 100
 
 # Histogram of CpGs across chromosomes in Illumina array
-png("Supplementary Figures/Supplementary_Figure_4.png", width = 8, height = 5, units = "in", res = 600)
+pdf("Supplementary Figures/Supplementary_Figure_4.pdf", width = 8, height = 5)
 ggplot(df_chr, aes(x = Var1, y = perc_in_genome)) +
   geom_col(fill = "seagreen4") +
   theme_bw(base_size = 15) +
